@@ -35,8 +35,8 @@ window.plugins.backgroundLocationServices
 var bgLocationServices =  window.plugins.backgroundLocationServices;
 
  bgLocationServices.configure({
-     desiredAccuracy: 1,
-     distanceFilter: 1,
+     desiredAccuracy: 1, // Desired Accuracy of the location updates (lower means more accurate but more battery consumption)
+     distanceFilter: 1, // How far you must move from the last point to trigger a location update
      notificationTitle: 'BG Plugin', // <-- android only, customize the title of the notification
      notificationText: 'Tracking', // <-- android only, customize the text of the notification
      activityType: 'AutomotiveNavigation',
