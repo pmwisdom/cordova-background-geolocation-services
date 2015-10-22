@@ -12,6 +12,9 @@ This plugin is for enabling background geolocation in your cordova project. It i
   * Enable better distance filtering, possibly by speed readings
   * Test
   * Documentation
+  * Demos (Regular Node, Meteor)
+  * Meteor Specific Atmosphere Package
+  * Npm
  * Android:
   * Make Icon Notification user configureable
   * Find out how to enable callbacks for android even when the app is destroyed by the OS
