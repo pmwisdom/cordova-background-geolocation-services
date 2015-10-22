@@ -34,6 +34,7 @@ window.plugins.backgroundLocationServices
 ````javascript
 var bgLocationServices =  window.plugins.backgroundLocationServices;
 
+//This is based off of christocracys original plugin so that its easy for all
 bgLocationServices.configure({
      desiredAccuracy: 1, // Desired Accuracy of the location updates (lower means more accurate but more battery consumption)
      distanceFilter: 1, // How far you must move from the last point to trigger a location update
@@ -63,7 +64,5 @@ bgLocationServices.registerForLocationUpdates(function(location) {
 bgLocationServices.start();
 
 ````
-
-
 
 
