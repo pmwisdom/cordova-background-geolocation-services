@@ -65,4 +65,5 @@ bgLocationServices.start();
 
 ````
 
+By the way, credit to Christocracy and his great plugin that spurned this one. It should share the same concepts via javascript.
 
