@@ -48,7 +48,7 @@ bgLocationServices.configure({
 });
 
 bgLocationServices.registerForLocationUpdates(function(location) {
-     console.log("We got an iOS BG Update" + JSON.stringify(location));
+     console.log("We got an BG Update" + JSON.stringify(location));
 }, function(err) {
      console.log("Error: Didnt get an update", err);
 });
