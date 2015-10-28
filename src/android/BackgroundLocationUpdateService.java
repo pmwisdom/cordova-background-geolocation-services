@@ -145,9 +145,9 @@ public class BackgroundLocationUpdateService
         connectivityManager     = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 
         // Location Update PI
-        Intent locationUpdateIntent = new Intent(LOCATION_UPDATE);
+        Intent locationUpdateIntent = new Intent(Constants.LOCATION_UPDATE);
         locationUpdatePI = PendingIntent.getBroadcast(this, 9001, locationUpdateIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        registerReceiver(locationUpdateReceiver, new IntentFilter(LOCATION_UPDATE));
+        registerReceiver(locationUpdateReceiver, new IntentFilter(Constants.LOCATION_UPDATE));
 
         // Receivers for start/stop recording
         registerReceiver(startRecordingReceiver, new IntentFilter(Constants.START_RECORDING));
@@ -291,10 +291,10 @@ public class BackgroundLocationUpdateService
                     Log.d(TAG, "- locationUpdateReceiver" + location.toString());
                 }
 
-                // Go ahead and cache, push to server
-                lastLocation = location;
+              // Go ahead and cache, push to server
+              lastLocation = location;
 
-                //This is all for setting the callback for android which currently does not work
+              //This is all for setting the callback for android which currently does not work
                Intent mIntent = new Intent(Constants.CALLBACK_LOCATION_UPDATE);
                mIntent.putExtras(createLocationBundle(location));
                getApplicationContext().sendBroadcast(mIntent);
