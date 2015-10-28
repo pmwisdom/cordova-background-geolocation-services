@@ -193,27 +193,39 @@ public class BackgroundLocationUpdateService
             main.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, main,  PendingIntent.FLAG_UPDATE_CURRENT);
 
+            Context context = getApplicationContext();
+
             Notification.Builder builder = new Notification.Builder(this);
             builder.setContentTitle(notificationTitle);
             builder.setContentText(notificationText);
-            builder.setSmallIcon(getPluginResource("location_icon"));
+            builder.setSmallIcon(context.getApplicationInfo().icon);
 
-            Integer resId = getPluginResource("location_icon");
+            Bitmap bm = BitmapFactory.decodeResource(context.getResources(),
+                                           context.getApplicationInfo().icon);
 
-            //Scale our location_icon.png for different phone resolutions
-            //TODO: Get this icon via a filepath from the user
-            if(resId != 0) {
-                Bitmap bm = BitmapFactory.decodeResource(getResources(), resId);
+            float mult = getImageFactor(getResources());
+            Bitmap scaledBm = Bitmap.createScaledBitmap(bm, (int)(bm.getWidth()*mult), (int)(bm.getHeight()*mult), false);
 
-                float mult = getImageFactor(getResources());
-                Bitmap scaledBm = Bitmap.createScaledBitmap(bm, (int)(bm.getWidth()*mult), (int)(bm.getHeight()*mult), false);
-
-                if(scaledBm != null) {
-                    builder.setLargeIcon(scaledBm);
-                }
-            } else {
-                Log.w(TAG, "Could NOT find Resource for large icon");
+            if(scaledBm != null) {
+              builder.setLargeIcon(scaledBm);
             }
+
+            // Integer resId = getPluginResource("location_icon");
+            //
+            // //Scale our location_icon.png for different phone resolutions
+            // //TODO: Get this icon via a filepath from the user
+            // if(resId != 0) {
+            //     Bitmap bm = BitmapFactory.decodeResource(getResources(), resId);
+            //
+            //     float mult = getImageFactor(getResources());
+            //     Bitmap scaledBm = Bitmap.createScaledBitmap(bm, (int)(bm.getWidth()*mult), (int)(bm.getHeight()*mult), false);
+            //
+            //     if(scaledBm != null) {
+            //         builder.setLargeIcon(scaledBm);
+            //     }
+            // } else {
+            //     Log.w(TAG, "Could NOT find Resource for large icon");
+            // }
 
             //Make clicking the event link back to the main cordova activity
             builder.setContentIntent(pendingIntent);
