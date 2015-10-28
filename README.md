@@ -1,4 +1,4 @@
-# cordova-background-location-services
+# cordova-background-geolocation-services
 Background Geolocation For Android and iOS
 
 ## Plugin is in BETA, I haven't found anything broken yet, but I wouldnt use this in production until its tested more! ##
