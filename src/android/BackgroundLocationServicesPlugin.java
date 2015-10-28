@@ -18,11 +18,16 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
+
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.content.ComponentName;
 
 public class BackgroundLocationServicesPlugin extends CordovaPlugin {
     private static final String TAG = "BackgroundLocationServicesPlugin";
     private static final String PLUGIN_VERSION = "1.0";
-    
+
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_CONFIGURE = "configure";
@@ -30,18 +35,20 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
     public static final String ACTION_AGGRESSIVE_TRACKING = "startAggressiveTracking";
     public static final String ACTION_GET_VERSION = "getVersion";
     public static final String ACTION_REGISTER_FOR_LOCATION_UPDATES = "registerForLocationUpdates";
-    
+
     private Intent updateServiceIntent;
     private Intent geofenceServiceIntent;
-    
+
     private Boolean isEnabled = false;
-    
+    private Boolean inBackground = false;
+    private boolean isServiceBound = false;
+
     private String desiredAccuracy = "1000";
-    
+
     private String interval = "300000";
     private String fastestInterval = "60000";
     private String aggressiveInterval = "4000";
-    
+
     private String distanceFilter = "30";
     private String isDebugging = "false";
     private String notificationTitle = "Location Tracking";
@@ -53,28 +60,35 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
     private String url;
     private String params;
     private String headers;
-    
+
     private JSONArray fences = null;
 
-    private static final String P_NAME = "com.flybuy.cordova.location.";
-    
-    private static final String STOP_RECORDING  = P_NAME + "STOP_RECORDING";
-    private static final String START_RECORDING = P_NAME + "START_RECORDING";
-    private static final String CHANGE_AGGRESSIVE = P_NAME + "CHANGE_AGGRESSIVE";
-    private static final String STOP_GEOFENCES = P_NAME + "STOP_GEOFENCES";
-    private static final String CALLBACK_LOCATION_UPDATE = P_NAME + "CALLBACK_LOCATION_UPDATE";
-    
     private CallbackContext locationUpdateCallback = null;
-    
+
     private BroadcastReceiver receiver = null;
-    
+
+    // Used to (un)bind the service to with the activity
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+      @Override
+      public void onServiceConnected(ComponentName name, IBinder binder) {
+          // Nothing to do here
+          Log.i(TAG, "SERVICE CONNECTED TO MAIN ACTIVITY");
+      }
+
+      @Override
+      public void onServiceDisconnected(ComponentName name) {
+        // Nothing to do here
+        Log.i(TAG, "SERVICE DISCONNECTED");
+      }
+    };
+
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
-        
+
         Activity activity = this.cordova.getActivity();
-        
+
         Boolean result = false;
         updateServiceIntent = new Intent(activity, BackgroundLocationUpdateService.class);
-        
+
         if (ACTION_START.equalsIgnoreCase(action) && !isEnabled) {
             result = true;
             if (params == null || headers == null|| url == null) {
@@ -96,10 +110,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 updateServiceIntent.putExtra("params", params);
                 updateServiceIntent.putExtra("headers", headers);
 
-                activity.startService(updateServiceIntent);
-
-                createLocationUpdateReceiver();
-                webView.getContext().registerReceiver(this.receiver, new IntentFilter(CALLBACK_LOCATION_UPDATE));
+                isServiceBound = bindServiceToWebview(activity, updateServiceIntent);
 
                 isEnabled = true;
             }
@@ -108,7 +119,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             result = true;
             activity.stopService(updateServiceIntent);
             callbackContext.success();
-            
+
             destroyLocationUpdateReceiver();
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
@@ -130,7 +141,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 this.params = data.getString(11);
                 this.headers = data.getString(12);
 
-                
+
             } catch (JSONException e) {
                 Log.d(TAG, "Json Exception" + e);
                 callbackContext.error("authToken/url required as parameters: " + e.getMessage());
@@ -144,17 +155,17 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             callbackContext.success(PLUGIN_VERSION);
         } else if(ACTION_REGISTER_FOR_LOCATION_UPDATES.equalsIgnoreCase(action)) {
             result = true;
-            if(debug()) {
-                Log.w(TAG, "WARNING: Anroid does not support callbacks yet. Use the HTTP configuration");
-            }
+            // if(debug()) {
+            //     Log.w(TAG, "WARNING: Anroid does not support callbacks yet. Use the HTTP configuration");
+            // }
             //Register the funcition for repeated location update
-            // locationUpdateCallback = callbackContext;
+            locationUpdateCallback = callbackContext;
 
-            callbackContext.error("Anroid does not support callbacks yet. Use the HTTP configuration");
+            // callbackContext.error("Anroid does not support callbacks yet. Use the HTTP configuration");
         } else if(ACTION_AGGRESSIVE_TRACKING.equalsIgnoreCase(action)) {
             result = true;
             if(isEnabled) {
-                this.cordova.getActivity().sendBroadcast(new Intent(CHANGE_AGGRESSIVE));
+                this.cordova.getActivity().sendBroadcast(new Intent(Constants.CHANGE_AGGRESSIVE));
                 callbackContext.success();
             } else {
                 callbackContext.error("Tracking not enabled, need to start tracking before starting aggressive tracking");
@@ -163,7 +174,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
 
         return result;
     }
-    
+
     public Boolean debug() {
         if(Boolean.parseBoolean(isDebugging)) {
             return true;
@@ -171,7 +182,25 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             return false;
         }
     }
-    
+
+    private Boolean bindServiceToWebview(Context context, Intent intent) {
+      Boolean didBind = false;
+
+      try {
+        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        context.startService(intent);
+
+        createLocationUpdateReceiver();
+        webView.getContext().registerReceiver(this.receiver, new IntentFilter(Constants.CALLBACK_LOCATION_UPDATE));
+
+        didBind = true;
+      } catch(Exception e) {
+        Log.e(TAG, "ERROR BINDING SERVICE" + e);
+      }
+
+      return didBind;
+    }
+
     @Override
     public void onPause(boolean multitasking) {
         if(debug()) {
@@ -179,10 +208,10 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         }
         if (isEnabled) {
             Activity activity = this.cordova.getActivity();
-            activity.sendBroadcast(new Intent(START_RECORDING));
+            activity.sendBroadcast(new Intent(Constants.START_RECORDING));
         }
     }
-    
+
     @Override
     public void onResume(boolean multitasking) {
         if(debug()) {
@@ -190,10 +219,10 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         }
         if (isEnabled) {
             Activity activity = this.cordova.getActivity();
-            activity.sendBroadcast(new Intent(STOP_RECORDING));
+            activity.sendBroadcast(new Intent(Constants.STOP_RECORDING));
         }
     }
-    
+
     private void createLocationUpdateReceiver() {
         this.receiver = new BroadcastReceiver() {
             @Override
@@ -202,6 +231,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                     Log.d(TAG, "Location Received, ready for callback");
                 }
                 if (locationUpdateCallback != null) {
+                    Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
                     cordova.getThreadPool().execute(new Runnable() {
                         public void run() {
                             if(intent.getExtras() == null) {
@@ -215,12 +245,13 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                         }
                     });
                 } else {
+                    Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
                     Log.w(TAG, "WARNING LOCATION UPDATE CALLBACK IS NULL, PLEASE RUN REGISTER LOCATION UPDATES");
                 }
             }
         };
     }
-    
+
     private void destroyLocationUpdateReceiver() {
         if (this.receiver != null) {
             try {
@@ -231,7 +262,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             }
         }
     }
-    
+
     private JSONObject locationToJSON(Bundle b) {
         JSONObject data = new JSONObject();
         try {
@@ -245,18 +276,18 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         } catch(JSONException e) {
             Log.d(TAG, "ERROR CREATING JSON" + e);
         }
-        
+
         return data;
     }
-    
-    
+
+
     /**
      * Override method in CordovaPlugin.
      * Checks to see if it should turn off
      */
     public void onDestroy() {
         Activity activity = this.cordova.getActivity();
-        
+
         if(isEnabled && stopOnTerminate.equalsIgnoreCase("true")) {
             activity.stopService(updateServiceIntent);
         }

@@ -83,20 +83,13 @@ import android.graphics.BitmapFactory;
 import android.util.DisplayMetrics;
 import android.content.res.Resources;
 
+//Detected Activities imports
 
 public class BackgroundLocationUpdateService
         extends Service
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String P_NAME = "com.flybuy.cordova.location.";
-
     private static final String TAG = "BackgroundLocationUpdateService";
-    private static final String LOCATION_UPDATE = P_NAME + "LOCATION_UPDATE";
-    private static final String STOP_RECORDING  = P_NAME + "STOP_RECORDING";
-    private static final String START_RECORDING = P_NAME + "START_RECORDING";
-    private static final String STOP_GEOFENCES = P_NAME + "STOP_GEOFENCES";
-    private static final String CALLBACK_LOCATION_UPDATE = P_NAME + "CALLBACK_LOCATION_UPDATE";
-    private static final String CHANGE_AGGRESSIVE = P_NAME + "CHANGE_AGGRESSIVE";
 
     private Location lastLocation;
     private long lastUpdateTime = 0l;
@@ -157,9 +150,9 @@ public class BackgroundLocationUpdateService
         registerReceiver(locationUpdateReceiver, new IntentFilter(LOCATION_UPDATE));
 
         // Receivers for start/stop recording
-        registerReceiver(startRecordingReceiver, new IntentFilter(START_RECORDING));
-        registerReceiver(stopRecordingReceiver, new IntentFilter(STOP_RECORDING));
-        registerReceiver(startAggressiveReceiver, new IntentFilter(CHANGE_AGGRESSIVE));
+        registerReceiver(startRecordingReceiver, new IntentFilter(Constants.START_RECORDING));
+        registerReceiver(stopRecordingReceiver, new IntentFilter(Constants.STOP_RECORDING));
+        registerReceiver(startAggressiveReceiver, new IntentFilter(Constants.CHANGE_AGGRESSIVE));
 
         // Location criteria
         criteria = new Criteria();
@@ -178,7 +171,6 @@ public class BackgroundLocationUpdateService
                 params = new JSONObject(intent.getStringExtra("params"));
                 headers = new JSONObject(intent.getStringExtra("headers"));
             } catch (JSONException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
@@ -212,7 +204,7 @@ public class BackgroundLocationUpdateService
             //TODO: Get this icon via a filepath from the user
             if(resId != 0) {
                 Bitmap bm = BitmapFactory.decodeResource(getResources(), resId);
-                
+
                 float mult = getImageFactor(getResources());
                 Bitmap scaledBm = Bitmap.createScaledBitmap(bm, (int)(bm.getWidth()*mult), (int)(bm.getHeight()*mult), false);
 
@@ -294,8 +286,8 @@ public class BackgroundLocationUpdateService
             if (location != null) {
 
                 if(isDebugging) {
-                    Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
-                    startTone("doodly_doo");
+                    // Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
+                    // startTone("doodly_doo");
                     Log.d(TAG, "- locationUpdateReceiver" + location.toString());
                 }
 
@@ -303,23 +295,27 @@ public class BackgroundLocationUpdateService
                 lastLocation = location;
 
                 //This is all for setting the callback for android which currently does not work
-                //Activity activity = getApplicationContext();
-//                Intent mIntent = new Intent(CALLBACK_LOCATION_UPDATE);
-//                Bundle b = new Bundle();
-//                b.putDouble("latitude", location.getLatitude());
-//                b.putDouble("longitude", location.getLongitude());
-//                b.putDouble("accuracy", location.getAccuracy());
-//                b.putDouble("altitude", location.getAltitude());
-//                b.putDouble("timestamp", location.getTime());
-//                b.putDouble("speed", location.getSpeed());
-//                b.putDouble("heading", location.getBearing());
-//                mIntent.putExtras(b);
-//                getApplicationContext().sendBroadcast(mIntent);
+               Intent mIntent = new Intent(Constants.CALLBACK_LOCATION_UPDATE);
+               mIntent.putExtras(createLocationBundle(location));
+               getApplicationContext().sendBroadcast(mIntent);
 
-                postLocation(location);
+                // postLocation(location);
             }
         }
     };
+
+    private Bundle createLocationBundle(Location location) {
+      Bundle b = new Bundle();
+      b.putDouble("latitude", location.getLatitude());
+      b.putDouble("longitude", location.getLongitude());
+      b.putDouble("accuracy", location.getAccuracy());
+      b.putDouble("altitude", location.getAltitude());
+      b.putDouble("timestamp", location.getTime());
+      b.putDouble("speed", location.getSpeed());
+      b.putDouble("heading", location.getBearing());
+
+      return b;
+    }
 
     private void postLocation(Location location) {
 
@@ -373,7 +369,7 @@ public class BackgroundLocationUpdateService
             location.put("speed", l.getSpeed());
             location.put("bearing", l.getBearing());
             location.put("altitude", l.getAltitude());
-    
+
             params.put("location", location);
 
             Log.i(TAG, "Location To Be Posted: " + location.toString());
@@ -393,7 +389,7 @@ public class BackgroundLocationUpdateService
                     request.setHeader(headkey, (String) headers.getString(headkey));
                 }
             }
-            
+
             Log.d(TAG, "Posting to " + request.getURI().toString());
             HttpResponse response = httpClient.execute(request);
             Log.i(TAG, "Response received: " + response.getStatusLine());
@@ -425,11 +421,6 @@ public class BackgroundLocationUpdateService
                     return true;
                 case 410:
                     Log.e(TAG, "ALERT --- : Got kill signal from server -- stopping location updates and killing update services");
-
-                    Intent intent = new Intent();
-                    intent.setAction(STOP_GEOFENCES);
-                    sendBroadcast(intent);
-
                     this.stopRecording();
                     this.cleanUp();
                     return false;
@@ -710,7 +701,7 @@ public class BackgroundLocationUpdateService
         if(locationClientAPI != null) {
             locationClientAPI.disconnect();
         }
-    
+
     }
 
     @Override
