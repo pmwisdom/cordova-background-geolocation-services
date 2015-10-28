@@ -9,6 +9,7 @@ This plugin is for enabling background geolocation in your cordova project. It i
 ### Todo: 
  * Both: 
   * Reduce battery consumption via accelerometer readings
+  * SQLlite Storage
   * Enable better distance filtering, possibly by speed readings
   * Test
   * Documentation
