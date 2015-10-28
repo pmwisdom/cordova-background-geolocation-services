@@ -231,7 +231,11 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                     Log.d(TAG, "Location Received, ready for callback");
                 }
                 if (locationUpdateCallback != null) {
-                    Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
+                  
+                    if(debug()) {
+                      Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
+                    }
+
                     cordova.getThreadPool().execute(new Runnable() {
                         public void run() {
                             if(intent.getExtras() == null) {
@@ -245,7 +249,9 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                         }
                     });
                 } else {
-                    Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
+                    if(debug()) {
+                      Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
+                    }
                     Log.w(TAG, "WARNING LOCATION UPDATE CALLBACK IS NULL, PLEASE RUN REGISTER LOCATION UPDATES");
                 }
             }
