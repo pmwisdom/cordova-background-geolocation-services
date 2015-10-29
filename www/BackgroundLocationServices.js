@@ -4,10 +4,7 @@ module.exports = {
     config: {},
      configure: function(config) {
         this.config = config;
-        var params              = JSON.stringify(config.params || {}),
-            headers             = JSON.stringify(config.headers || {}),
-            url                 = config.url || 'BackgroundGeoLocation_url',
-            distanceFilter      = (config.distanceFilter   >= 0) ? config.distanceFilter   : 500, // meters
+        var distanceFilter      = (config.distanceFilter   >= 0) ? config.distanceFilter   : 500, // meters
             desiredAccuracy     = (config.desiredAccuracy  >= 0) ? config.desiredAccuracy  : 100, // meters
             interval            = (config.interval         >= 0) ? config.interval        : 900000, // milliseconds
             fastestInterval     = (config.fastestInterval  >= 0) ? config.fastestInterval : 120000, // milliseconds
@@ -16,15 +13,13 @@ module.exports = {
             notificationTitle   = config.notificationTitle || "Background tracking",
             notificationText    = config.notificationText  || "ENABLED",
             activityType        = config.activityType      || "OTHER",
-            fences              = config.fences || null;
-
-            console.log("PNAME", this.pName)
+            activitiesInterval =  config.activitiesInterval || 1000;
 
         exec(function() {},
              function() {},
              'BackgroundLocationServices',
              'configure',
-             [distanceFilter, desiredAccuracy,  interval, fastestInterval, aggressiveInterval, debug, notificationTitle, notificationText, activityType, fences, url, params, headers]
+             [distanceFilter, desiredAccuracy,  interval, fastestInterval, aggressiveInterval, debug, notificationTitle, notificationText, activityType, activitiesInterval]
         );
     },
     registerForLocationUpdates : function(success, failure, config) {
@@ -32,6 +27,14 @@ module.exports = {
              failure || function() {},
              'BackgroundLocationServices',
              'registerForLocationUpdates',
+             []
+        );
+    },
+    registerForActivityUpdates : function(success, failure, config) {
+        exec(success || function() {},
+             failure || function() {},
+             'BackgroundLocationServices',
+             'registerForActivityUpdates',
              []
         );
     },

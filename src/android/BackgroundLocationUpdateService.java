@@ -83,6 +83,13 @@ import android.graphics.BitmapFactory;
 import android.util.DisplayMetrics;
 import android.content.res.Resources;
 
+
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.location.ActivityRecognitionResult;
+import java.util.ArrayList;
+import com.google.android.gms.common.ConnectionResult;
+
 //Detected Activities imports
 
 public class BackgroundLocationUpdateService
@@ -92,14 +99,19 @@ public class BackgroundLocationUpdateService
     private static final String TAG = "BackgroundLocationUpdateService";
 
     private Location lastLocation;
+    private DetectedActivity lastActivity;
     private long lastUpdateTime = 0l;
     private Boolean fastestSpeed = false;
 
     private PendingIntent locationUpdatePI;
     private GoogleApiClient locationClientAPI;
+    private PendingIntent detectedActivitiesPI;
+    private GoogleApiClient detectedActivitiesAPI;
 
     private Integer desiredAccuracy = 100;
     private Integer distanceFilter  = 30;
+
+    private Integer activitiesInterval = 1000;
 
     private static final Integer SECONDS_PER_MINUTE      = 60;
     private static final Integer MILLISECONDS_PER_SECOND = 60;
@@ -112,6 +124,8 @@ public class BackgroundLocationUpdateService
     private String notificationTitle = "Background checking";
     private String notificationText = "ENABLED";
     private Boolean stopOnTerminate;
+    private Boolean isRequestingActivity = false;
+    private Boolean isRecording = false;
 
     private ToneGenerator toneGenerator;
 
@@ -122,9 +136,9 @@ public class BackgroundLocationUpdateService
 
     private LocationRequest locationRequest;
 
-    private JSONObject params;
-    private String url = "localhost:3000/location";
-    private JSONObject headers;
+    // private JSONObject params;
+    // private String url = "localhost:3000/location";
+    // private JSONObject headers;
 
 
     @Override
@@ -149,6 +163,10 @@ public class BackgroundLocationUpdateService
         locationUpdatePI = PendingIntent.getBroadcast(this, 9001, locationUpdateIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         registerReceiver(locationUpdateReceiver, new IntentFilter(Constants.LOCATION_UPDATE));
 
+        Intent detectedActivitiesIntent = new Intent(Constants.DETECTED_ACTIVITY_UPDATE);
+        detectedActivitiesPI = PendingIntent.getBroadcast(this, 9002, detectedActivitiesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        registerReceiver(detectedActivitiesReceiver, new IntentFilter(Constants.DETECTED_ACTIVITY_UPDATE));
+
         // Receivers for start/stop recording
         registerReceiver(startRecordingReceiver, new IntentFilter(Constants.START_RECORDING));
         registerReceiver(stopRecordingReceiver, new IntentFilter(Constants.STOP_RECORDING));
@@ -167,15 +185,15 @@ public class BackgroundLocationUpdateService
         Log.i(TAG, "Received start id " + startId + ": " + intent);
         if (intent != null) {
 
-            try {
-                params = new JSONObject(intent.getStringExtra("params"));
-                headers = new JSONObject(intent.getStringExtra("headers"));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            // try {
+            //     params = new JSONObject(intent.getStringExtra("params"));
+            //     headers = new JSONObject(intent.getStringExtra("headers"));
+            // } catch (JSONException e) {
+            //     e.printStackTrace();
+            // }
 
             //Get our POST url and configure options from the intent
-            url = intent.getStringExtra("url");
+            // url = intent.getStringExtra("url");
 
             distanceFilter = Integer.parseInt(intent.getStringExtra("distanceFilter"));
             desiredAccuracy = Integer.parseInt(intent.getStringExtra("desiredAccuracy"));
@@ -183,6 +201,7 @@ public class BackgroundLocationUpdateService
             interval             = Integer.parseInt(intent.getStringExtra("interval"));
             fastestInterval      = Integer.parseInt(intent.getStringExtra("fastestInterval"));
             aggressiveInterval   = Integer.parseInt(intent.getStringExtra("aggressiveInterval"));
+            activitiesInterval   = Integer.parseInt(intent.getStringExtra("activitiesInterval"));
 
             isDebugging = Boolean.parseBoolean(intent.getStringExtra("isDebugging"));
             notificationTitle = intent.getStringExtra("notificationTitle");
@@ -242,8 +261,8 @@ public class BackgroundLocationUpdateService
             startForeground(startId, notification);
         }
 
-        Log.i(TAG, "- url: " + url);
-        Log.i(TAG, "- params: "  + params.toString());
+        // Log.i(TAG, "- url: " + url);
+        // Log.i(TAG, "- params: "  + params.toString());
         Log.i(TAG, "- interval: "             + interval);
         Log.i(TAG, "- fastestInterval: "      + fastestInterval);
 
@@ -257,34 +276,36 @@ public class BackgroundLocationUpdateService
         return START_REDELIVER_INTENT;
     }
 
-    //Helper function to get the screen scale for our big icon
-    public float getImageFactor(Resources r) {
-         DisplayMetrics metrics = r.getDisplayMetrics();
-         float multiplier=metrics.density/3f;
-         return multiplier;
-    }
+    //Receivers for setting the plugin to a certain state
+    private BroadcastReceiver startAggressiveReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            setStartAggressiveTrackingOn();
+        }
+    };
 
-    //retrieves the plugin resource ID from our resources folder for a given drawable name
-    public Integer getPluginResource(String resourceName) {
-        return getApplication().getResources().getIdentifier(resourceName, "drawable", getApplication().getPackageName());
-    }
+    private BroadcastReceiver startRecordingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(isDebugging) {
+               Log.d(TAG, "- Start Recording Receiver");
+            }
 
-    /**
-     * Adds an onclick handler to the notification
-     */
-    private Notification.Builder setClickEvent (Notification.Builder notification) {
-        Context context     = getApplicationContext();
-        String packageName  = context.getPackageName();
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            startDetectingActivities();
+            startRecording();
+        }
+    };
 
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        int requestCode = new Random().nextInt();
-
-        PendingIntent contentIntent = PendingIntent.getActivity(context, requestCode, launchIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-
-        return notification.setContentIntent(contentIntent);
-    }
+    private BroadcastReceiver stopRecordingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(isDebugging) {
+                Log.d(TAG, "- Stop Recording Receiver");
+            }
+            stopRecording();
+            stopDetectingActivities();
+        }
+    };
 
     /**
      * Broadcast receiver for receiving a single-update from LocationManager.
@@ -316,6 +337,61 @@ public class BackgroundLocationUpdateService
         }
     };
 
+    private BroadcastReceiver detectedActivitiesReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
+        ArrayList<DetectedActivity> detectedActivities = (ArrayList) result.getProbableActivities();
+
+        //Find the activity with the highest percentage
+        lastActivity = Constants.getProbableActivity(detectedActivities);
+
+        Log.w(TAG, "MOST LIKELY ACTIVITY: " + Constants.getActivityString(lastActivity.getType()) + " " + lastActivity.getConfidence());
+
+        Intent mIntent = new Intent(Constants.CALLBACK_ACTIVITY_UPDATE);
+        mIntent.putExtra(Constants.ACTIVITY_EXTRA, detectedActivities);
+        getApplicationContext().sendBroadcast(mIntent);
+
+        if(lastActivity.getType() == DetectedActivity.STILL && isRecording) {
+          Toast.makeText(context, "Detected Activity was STILL, Stop recording", Toast.LENGTH_SHORT).show();
+          stopRecording();
+        } else if(lastActivity.getType() != DetectedActivity.STILL && !isRecording) {
+          Toast.makeText(context, "Detected Activity was ACTIVE, Start Recording", Toast.LENGTH_SHORT).show();
+          startRecording();
+        }
+        //else do nothing
+      }
+    };
+
+    //Helper function to get the screen scale for our big icon
+    public float getImageFactor(Resources r) {
+         DisplayMetrics metrics = r.getDisplayMetrics();
+         float multiplier=metrics.density/3f;
+         return multiplier;
+    }
+
+    //retrieves the plugin resource ID from our resources folder for a given drawable name
+    public Integer getPluginResource(String resourceName) {
+        return getApplication().getResources().getIdentifier(resourceName, "drawable", getApplication().getPackageName());
+    }
+
+    /**
+     * Adds an onclick handler to the notification
+     */
+    private Notification.Builder setClickEvent (Notification.Builder notification) {
+        Context context     = getApplicationContext();
+        String packageName  = context.getPackageName();
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        int requestCode = new Random().nextInt();
+
+        PendingIntent contentIntent = PendingIntent.getActivity(context, requestCode, launchIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        return notification.setContentIntent(contentIntent);
+    }
+
     private Bundle createLocationBundle(Location location) {
       Bundle b = new Bundle();
       b.putDouble("latitude", location.getLatitude());
@@ -329,178 +405,148 @@ public class BackgroundLocationUpdateService
       return b;
     }
 
-    private void postLocation(Location location) {
+    // private void postLocation(Location location) {
+    //
+    //     PostLocationTask task = new BackgroundLocationUpdateService.PostLocationTask();
+    //     Log.d(TAG, "Before post : Start Executor " +  task.getStatus());
+    //
+    //     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+    //         task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, location);
+    //     }
+    //     else {
+    //         task.execute(location);
+    //     }
+    //
+    //     Log.d(TAG, "After Post" + task.getStatus());
+    //
+    // }
+    //
+    // private class PostLocationTask extends AsyncTask<Object, Integer, Boolean> {
+    //
+    //     @Override
+    //     protected Boolean doInBackground(Object... objects) {
+    //         Log.d(TAG, "Executing PostLocationTask#doInBackground");
+    //         return postLocationSync((Location)objects[0]);
+    //     }
+    //
+    //     @Override
+    //     protected void onPostExecute(Boolean result) {
+    //         Log.d(TAG, "PostLocationTask#onPostExecture");
+    //     }
+    // }
+    //
+    // private boolean postLocationSync(Location l) {
+    //     if (l == null) {
+    //         Log.w(TAG, "postLocation: null location");
+    //         return false;
+    //     }
+    //     try {
+    //         lastUpdateTime = SystemClock.elapsedRealtime();
+    //         Log.i(TAG, "Posting  native location update: " + l);
+    //
+    //         //Gets a http OR https tolerant client, supports both modes
+    //         DefaultHttpClient httpClient = getTolerantClient();
+    //
+    //         HttpPost request = new HttpPost(url);
+    //
+    //         //Shove our location data into a JSON obhject
+    //         JSONObject location = new JSONObject();
+    //         location.put("latitude", l.getLatitude());
+    //         location.put("longitude", l.getLongitude());
+    //         location.put("accuracy", l.getAccuracy());
+    //         location.put("speed", l.getSpeed());
+    //         location.put("bearing", l.getBearing());
+    //         location.put("altitude", l.getAltitude());
+    //
+    //         params.put("location", location);
+    //
+    //         Log.i(TAG, "Location To Be Posted: " + location.toString());
+    //
+    //         //Create a string entity to for our param keys
+    //         StringEntity se = new StringEntity(params.toString());
+    //         request.setEntity(se);
+    //         request.setHeader("Accept", "application/json");
+    //         request.setHeader("Content-type", "application/json");
+    //
+    //         //Loop over our header keys and add them to our request
+    //         Iterator<String> headkeys = headers.keys();
+    //         while (headkeys.hasNext()) {
+    //             String headkey = headkeys.next();
+    //             if (headkey != null) {
+    //                 Log.d(TAG, "Adding Header: " + headkey + " : " + (String) headers.getString(headkey));
+    //                 request.setHeader(headkey, (String) headers.getString(headkey));
+    //             }
+    //         }
+    //
+    //         Log.d(TAG, "Posting to " + request.getURI().toString());
+    //         HttpResponse response = httpClient.execute(request);
+    //         Log.i(TAG, "Response received: " + response.getStatusLine());
+    //
+    //         //Get the status code that the http request sends back if there is any
+    //         //This tells our plugin what to do in certain cases
+    //         int res = response.getStatusLine().getStatusCode();
+    //
+    //         //Users may fire a request code back to the plugin to initiate certain behavior:
+    //         //Codes:
+    //         //200 : Does nothing, simply there to mark that it received a pong
+    //         //201 : Sets the location update receiver to aggresive mode -- useful for pin pointing a user for a short period of time
+    //         //401 : Sets the location update receiver to kill mode -- useful for killing the clients location updates when their client cant (main app dead)
+    //         switch (res) {
+    //             case 200:
+    //                 return true;
+    //             case 201:
+    //                 Log.w(TAG, "Plugin received a request to initiate aggresive mode");
+    //                 if (!fastestSpeed) {
+    //                     detachRecorder();
+    //                     desiredAccuracy = 10;
+    //                     fastestInterval = 500;
+    //                     interval = 1000;
+    //                     attachRecorder();
+    //
+    //                     Log.e(TAG, "Changed Location params" + locationRequest.toString());
+    //                     fastestSpeed = true;
+    //                 }
+    //                 return true;
+    //             case 410:
+    //                 Log.e(TAG, "ALERT --- : Got kill signal from server -- stopping location updates and killing update services");
+    //                 this.stopRecording();
+    //                 this.cleanUp();
+    //                 return false;
+    //             default:
+    //                 return false;
+    //         }
+    //
+    //     } catch (Throwable e) {
+    //         Log.w(TAG, "Exception posting location: " + e);
+    //         e.printStackTrace();
+    //         return false;
+    //     }
+    // }
+    //
+    // //Retrieves the url string, and does the extra work required to make an https request if it detects https.
+    // //Returns an DefaultHttpClient
+    // public DefaultHttpClient getTolerantClient() {
+    //     DefaultHttpClient client = new DefaultHttpClient();
+    //
+    //     if(!(url.substring(0, 5)).equals("https")) {
+    //         return client;
+    //     }
+    //
+    //     HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+    //
+    //     SchemeRegistry registry = new SchemeRegistry();
+    //     SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
+    //     socketFactory.setHostnameVerifier((X509HostnameVerifier) hostnameVerifier);
+    //     registry.register(new Scheme("https", socketFactory, 443));
+    //     SingleClientConnManager mgr = new SingleClientConnManager(client.getParams(), registry);
+    //     DefaultHttpClient httpClient = new DefaultHttpClient(mgr, client.getParams());
+    //
+    //     // Set verifier
+    //     HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+    //
+    //     return httpClient;
+    // }
 
-        PostLocationTask task = new BackgroundLocationUpdateService.PostLocationTask();
-        Log.d(TAG, "Before post : Start Executor " +  task.getStatus());
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, location);
-        }
-        else {
-            task.execute(location);
-        }
-
-        Log.d(TAG, "After Post" + task.getStatus());
-
-    }
-
-    private class PostLocationTask extends AsyncTask<Object, Integer, Boolean> {
-
-        @Override
-        protected Boolean doInBackground(Object... objects) {
-            Log.d(TAG, "Executing PostLocationTask#doInBackground");
-            return postLocationSync((Location)objects[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            Log.d(TAG, "PostLocationTask#onPostExecture");
-        }
-    }
-
-    private boolean postLocationSync(Location l) {
-        if (l == null) {
-            Log.w(TAG, "postLocation: null location");
-            return false;
-        }
-        try {
-            lastUpdateTime = SystemClock.elapsedRealtime();
-            Log.i(TAG, "Posting  native location update: " + l);
-
-            //Gets a http OR https tolerant client, supports both modes
-            DefaultHttpClient httpClient = getTolerantClient();
-
-            HttpPost request = new HttpPost(url);
-
-            //Shove our location data into a JSON obhject
-            JSONObject location = new JSONObject();
-            location.put("latitude", l.getLatitude());
-            location.put("longitude", l.getLongitude());
-            location.put("accuracy", l.getAccuracy());
-            location.put("speed", l.getSpeed());
-            location.put("bearing", l.getBearing());
-            location.put("altitude", l.getAltitude());
-
-            params.put("location", location);
-
-            Log.i(TAG, "Location To Be Posted: " + location.toString());
-
-            //Create a string entity to for our param keys
-            StringEntity se = new StringEntity(params.toString());
-            request.setEntity(se);
-            request.setHeader("Accept", "application/json");
-            request.setHeader("Content-type", "application/json");
-
-            //Loop over our header keys and add them to our request
-            Iterator<String> headkeys = headers.keys();
-            while (headkeys.hasNext()) {
-                String headkey = headkeys.next();
-                if (headkey != null) {
-                    Log.d(TAG, "Adding Header: " + headkey + " : " + (String) headers.getString(headkey));
-                    request.setHeader(headkey, (String) headers.getString(headkey));
-                }
-            }
-
-            Log.d(TAG, "Posting to " + request.getURI().toString());
-            HttpResponse response = httpClient.execute(request);
-            Log.i(TAG, "Response received: " + response.getStatusLine());
-
-            //Get the status code that the http request sends back if there is any
-            //This tells our plugin what to do in certain cases
-            int res = response.getStatusLine().getStatusCode();
-
-            //Users may fire a request code back to the plugin to initiate certain behavior:
-            //Codes:
-            //200 : Does nothing, simply there to mark that it received a pong
-            //201 : Sets the location update receiver to aggresive mode -- useful for pin pointing a user for a short period of time
-            //401 : Sets the location update receiver to kill mode -- useful for killing the clients location updates when their client cant (main app dead)
-            switch (res) {
-                case 200:
-                    return true;
-                case 201:
-                    Log.w(TAG, "Plugin received a request to initiate aggresive mode");
-                    if (!fastestSpeed) {
-                        detachRecorder();
-                        desiredAccuracy = 10;
-                        fastestInterval = 500;
-                        interval = 1000;
-                        attachRecorder();
-
-                        Log.e(TAG, "Changed Location params" + locationRequest.toString());
-                        fastestSpeed = true;
-                    }
-                    return true;
-                case 410:
-                    Log.e(TAG, "ALERT --- : Got kill signal from server -- stopping location updates and killing update services");
-                    this.stopRecording();
-                    this.cleanUp();
-                    return false;
-                default:
-                    return false;
-            }
-
-        } catch (Throwable e) {
-            Log.w(TAG, "Exception posting location: " + e);
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    //Retrieves the url string, and does the extra work required to make an https request if it detects https.
-    //Returns an DefaultHttpClient
-    public DefaultHttpClient getTolerantClient() {
-        DefaultHttpClient client = new DefaultHttpClient();
-
-        if(!(url.substring(0, 5)).equals("https")) {
-            return client;
-        }
-
-        HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-
-        SchemeRegistry registry = new SchemeRegistry();
-        SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
-        socketFactory.setHostnameVerifier((X509HostnameVerifier) hostnameVerifier);
-        registry.register(new Scheme("https", socketFactory, 443));
-        SingleClientConnManager mgr = new SingleClientConnManager(client.getParams(), registry);
-        DefaultHttpClient httpClient = new DefaultHttpClient(mgr, client.getParams());
-
-        // Set verifier
-        HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
-
-        return httpClient;
-    }
-
-
-    //Receivers for setting the plugin to a certain state
-    private BroadcastReceiver startAggressiveReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            setStartAggressiveTrackingOn();
-        }
-    };
-
-    private BroadcastReceiver startRecordingReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(isDebugging) {
-               Log.d(TAG, "- Start Recording Receiver");
-            }
-            startRecording();
-        }
-    };
-
-    private BroadcastReceiver stopRecordingReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(isDebugging) {
-                Log.d(TAG, "- Stop Recording Receiver");
-            }
-            stopRecording();
-        }
-    };
-
-    private boolean running = false;
     private boolean enabled = false;
     private boolean startRecordingOnConnect = true;
 
@@ -513,7 +559,7 @@ public class BackgroundLocationUpdateService
     }
 
     private void setStartAggressiveTrackingOn() {
-        if(!fastestSpeed && this.running) {
+        if(!fastestSpeed && this.isRecording) {
             detachRecorder();
 
             desiredAccuracy = 10;
@@ -527,6 +573,48 @@ public class BackgroundLocationUpdateService
         }
     }
 
+    public void startDetectingActivities() {
+      this.isRequestingActivity = true;
+      attachDARecorder();
+    }
+
+    public void stopDetectingActivities() {
+      this.isRequestingActivity = false;
+      detatchDARecorder();
+    }
+
+    private void attachDARecorder() {
+      if (detectedActivitiesAPI == null) {
+          buildDAClient();
+      } else if (detectedActivitiesAPI.isConnected()) {
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                        detectedActivitiesAPI,
+                        this.activitiesInterval,
+                        detectedActivitiesPI
+                );
+          if(isDebugging) {
+              Log.d(TAG, "- DA RECORDER attached - start recording location updates");
+          }
+      } else {
+        Log.i(TAG, "NOT CONNECTED, CONNECT");
+          detectedActivitiesAPI.connect();
+      }
+    }
+
+    private void detatchDARecorder() {
+      if (detectedActivitiesAPI == null) {
+          buildDAClient();
+      } else if (detectedActivitiesAPI.isConnected()) {
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(detectedActivitiesAPI, detectedActivitiesPI);
+          if(isDebugging) {
+              Log.d(TAG, "- Recorder detached - stop recording location updates");
+          }
+      } else {
+          detectedActivitiesAPI.connect();
+      }
+    }
+
+
     public void startRecording() {
         this.startRecordingOnConnect = true;
         attachRecorder();
@@ -535,6 +623,41 @@ public class BackgroundLocationUpdateService
     public void stopRecording() {
         this.startRecordingOnConnect = false;
         detachRecorder();
+    }
+
+    private GoogleApiClient.ConnectionCallbacks cb = new GoogleApiClient.ConnectionCallbacks() {
+           @Override
+           public void onConnected(Bundle bundle) {
+               Log.w(TAG, "Activity Client Connected");
+               ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                       detectedActivitiesAPI,
+                       500,
+                       detectedActivitiesPI
+               );
+           }
+           @Override
+           public void onConnectionSuspended(int i) {
+              Log.w(TAG, "Connection To Activity Suspended");
+              Toast.makeText(getApplicationContext(), "Activity Client Suspended", Toast.LENGTH_SHORT).show();
+           }
+       };
+
+      private GoogleApiClient.OnConnectionFailedListener failedCb = new GoogleApiClient.OnConnectionFailedListener() {
+           @Override
+           public void onConnectionFailed(ConnectionResult cr) {
+               Log.w(TAG, "ERROR CONNECTING TO DETECTED ACTIVITIES");
+           }
+       };
+
+    protected synchronized void buildDAClient() {
+      Log.i(TAG, "BUILDING DA CLIENT");
+         detectedActivitiesAPI = new GoogleApiClient.Builder(this)
+                 .addApi(ActivityRecognition.API)
+                 .addConnectionCallbacks(cb)
+                 .addOnConnectionFailedListener(failedCb)
+                 .build();
+
+        detectedActivitiesAPI.connect();
     }
 
     protected synchronized void connectToPlayAPI() {
@@ -547,6 +670,7 @@ public class BackgroundLocationUpdateService
     }
 
     private void attachRecorder() {
+      Log.i(TAG, "Attaching Recorder");
         if (locationClientAPI == null) {
             connectToPlayAPI();
         } else if (locationClientAPI.isConnected()) {
@@ -556,7 +680,8 @@ public class BackgroundLocationUpdateService
                     .setInterval(interval)
                     .setSmallestDisplacement(distanceFilter);
             LocationServices.FusedLocationApi.requestLocationUpdates(locationClientAPI, locationRequest, locationUpdatePI);
-            this.running = true;
+            this.isRecording = true;
+
             if(isDebugging) {
                 Log.d(TAG, "- Recorder attached - start recording location updates");
             }
@@ -571,7 +696,7 @@ public class BackgroundLocationUpdateService
         } else if (locationClientAPI.isConnected()) {
             //flush the location updates from the api
             LocationServices.FusedLocationApi.removeLocationUpdates(locationClientAPI, locationUpdatePI);
-            this.running = false;
+            this.isRecording = false;
             if(isDebugging) {
                 Log.d(TAG, "- Recorder detached - stop recording location updates");
             }
@@ -698,6 +823,7 @@ public class BackgroundLocationUpdateService
             unregisterReceiver(locationUpdateReceiver);
             unregisterReceiver(startRecordingReceiver);
             unregisterReceiver(stopRecordingReceiver);
+            unregisterReceiver(detectedActivitiesReceiver);
         } catch(IllegalArgumentException e) {
                Log.e(TAG, "Error: Could not unregister receiver", e);
         }
