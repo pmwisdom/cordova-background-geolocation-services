@@ -1,5 +1,5 @@
 # cordova-background-geolocation-services
-Background Geolocation For Android and iOS
+Background Geolocation For Android and iOS with pure javascript callbacks.
 
 #### What is this?
 This plugin is for enabling background geolocation in your cordova project. It was aimed with the specific goal of normalizing the API for android and iOS and retrieving constant location updates in the background until you tell it to stop (If you tell it you want updates every 3 seconds it will give you one every 3 seconds). It is not optimized for battery life, yet. This is currently in active development. Feel free to make any requests. Below are features I am currently working on.
@@ -15,7 +15,7 @@ This plugin is for enabling background geolocation in your cordova project. It w
   * Meteor Specific Atmosphere Package
   * Npm
  * Android:
-  * Make Icon Notification user configureable
+  * ~~Make Icon Notification user configureable~~
   * ~~Get Android callbacks to work, always.~~
  * iOS
   * Enable switching to only using significant changes and back 
@@ -24,7 +24,10 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 **Android** : Uses an android Service and some trickery to bind it to your main App.
 
-**iOS** : Uses timers to enable endless background tracking. Fortunately we can use regular javascript callbacks on iOS. Which means your main app will receive the location updates via registerForLocationUpdates, and then you can send those updates to your server via your preferred method in javascript.
+**iOS** : Uses a timer based approach to enable endless background tracking.
+
+###Setup: 
+* Need to make sure you have Google Play Services installed via your android-sdk manager prior to building your application with this. It will be under the extras part of the sdk manager. More information can be found here: http://developer.android.com/sdk/installing/adding-packages.html.
 
 ### How to use: 
 
