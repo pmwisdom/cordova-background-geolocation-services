@@ -24,7 +24,7 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 **Android** : Uses an android Service and some trickery to bind it to your main App.
 
-**iOS** : Uses timers and some other trickery to enable endless background tracking.
+**iOS** : Uses a timer based approach to enable endless background tracking.
 
 ###Setup: 
 * Need to make sure you have Google Play Services installed via your android-sdk manager prior to building your application with this. It will be under the extras part of the sdk manager. More information can be found here: http://developer.android.com/sdk/installing/adding-packages.html.
