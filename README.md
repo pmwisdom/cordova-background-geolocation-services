@@ -48,11 +48,11 @@ var bgLocationServices =  window.plugins.backgroundLocationServices;
 bgLocationServices.configure({
      desiredAccuracy: 20, // Desired Accuracy of the location updates (lower means more accurate but more battery consumption)
      distanceFilter: 5, // (Meters) How far you must move from the last point to trigger a location update
-     notificationTitle: 'BG Plugin', // <-- android only, customize the title of the notification
-     notificationText: 'Tracking', // <-- android only, customize the text of the notification
-     debug: true, // <-- enable to show visualindications of locations updates for background-geolocation life-cycle.
-     interval: 9000, // (Milliseconds) Requested Interval in between location updates, in seconds
-     fastestInterval: 5000, // <-- (Milliseconds) android only Fastest interval your app / server can handle updates
+     notificationTitle: 'BG Plugin', // <-- (ANDROID ONLY), customize the title of the notification
+     notificationText: 'Tracking', // <-- (ANDROID ONLY), customize the text of the notification
+     debug: true, // <-- Enable to show visual indications when you receive a background location update
+     interval: 9000, // (Milliseconds) Requested Interval in between location updates.
+     fastestInterval: 5000, // <-- (Milliseconds) - (ANDROID ONLY) Fastest interval your app / server can handle updates
 });
 
 //Register a callback for location updates, this is where location objects will be sent in the background
