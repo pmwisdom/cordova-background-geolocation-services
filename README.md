@@ -22,7 +22,7 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 ### Techniques used:
 
-**Android** : Uses an android Service and some trickery to bind it to your main App.
+**Android** : Uses Fused Location API and soon Activity Recognition API to serve location updates endlessly.
 
 **iOS** : Uses a timer based approach to enable endless background tracking.
 
@@ -47,13 +47,12 @@ var bgLocationServices =  window.plugins.backgroundLocationServices;
 //Congfigure Plugin
 bgLocationServices.configure({
      desiredAccuracy: 20, // Desired Accuracy of the location updates (lower means more accurate but more battery consumption)
-     distanceFilter: 5, // How far you must move from the last point to trigger a location update
+     distanceFilter: 5, // (Meters) How far you must move from the last point to trigger a location update
      notificationTitle: 'BG Plugin', // <-- android only, customize the title of the notification
      notificationText: 'Tracking', // <-- android only, customize the text of the notification
-     activityType: 'AutomotiveNavigation',
-     debug: true, // <-- enable this hear sounds for background-geolocation life-cycle.
-     interval: 9000, // Requested Interval in between location updates, in seconds
-     fastestInterval: 5000, // <-- android only Fastest interval your app / server can handle updates
+     debug: true, // <-- enable to show visualindications of locations updates for background-geolocation life-cycle.
+     interval: 9000, // (Milliseconds) Requested Interval in between location updates, in seconds
+     fastestInterval: 5000, // <-- (Milliseconds) android only Fastest interval your app / server can handle updates
 });
 
 //Register a callback for location updates, this is where location objects will be sent in the background
@@ -70,6 +69,7 @@ bgLocationServices.start();
 ///later, to stop
 bgLocationServices.start();
 ````
+
 
 Other methods -
 
