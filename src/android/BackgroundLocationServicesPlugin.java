@@ -58,7 +58,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
     private String notificationTitle = "Location Tracking";
     private String notificationText = "ENABLED";
     private String stopOnTerminate = "false";
-    private String activityType = "Automotive";
+    private String useActivityDetection = "false";
 
     //Things I want to remove
     private String url;
@@ -115,6 +115,39 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
       }
     };
 
+    private BroadcastReceiver locationUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, final Intent intent) {
+            if(debug()) {
+                Log.d(TAG, "Location Received, ready for callback");
+            }
+            if (locationUpdateCallback != null) {
+
+                if(debug()) {
+                  Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
+                }
+
+                cordova.getThreadPool().execute(new Runnable() {
+                    public void run() {
+                        if(intent.getExtras() == null) {
+                            locationUpdateCallback.error("ERROR: Location Was Null");
+                        }
+
+                        JSONObject data = locationToJSON(intent.getExtras());
+                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
+                        pluginResult.setKeepCallback(true);
+                        locationUpdateCallback.sendPluginResult(pluginResult);
+                    }
+                });
+            } else {
+                if(debug()) {
+                  Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
+                }
+                Log.w(TAG, "WARNING LOCATION UPDATE CALLBACK IS NULL, PLEASE RUN REGISTER LOCATION UPDATES");
+            }
+        }
+    };
+
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
 
         Activity activity = this.cordova.getActivity();
@@ -136,7 +169,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
               updateServiceIntent.putExtra("fastestInterval", fastestInterval);
               updateServiceIntent.putExtra("aggressiveInterval", aggressiveInterval);
               updateServiceIntent.putExtra("activitiesInterval", activitiesInterval);
-
+              updateServiceIntent.putExtra("useActivityDetection", useActivityDetection);
                 // //URL / PARAMS
                 // updateServiceIntent.putExtra("url", url);
                 // updateServiceIntent.putExtra("params", params);
@@ -151,7 +184,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             activity.stopService(updateServiceIntent);
             callbackContext.success();
 
-            destroyLocationUpdateReceiver();
+            webView.getContext().unregisterReceiver(locationUpdateReceiver);
             webView.getContext().unregisterReceiver(detectedActivitiesReceiver);
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
@@ -166,7 +199,8 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 this.isDebugging = data.getString(5);
                 this.notificationTitle = data.getString(6);
                 this.notificationText = data.getString(7);
-                this.activityType = data.getString(8);
+                // this.activityType = data.getString(8);
+                this.useActivityDetection = data.getString(8);
                 this.activitiesInterval = data.getString(9);
                 // this.url = data.getString(10);
                 // Log.d(TAG, "URL" + this.url);
@@ -219,8 +253,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         context.startService(intent);
 
-        createLocationUpdateReceiver();
-        webView.getContext().registerReceiver(this.receiver, new IntentFilter(Constants.CALLBACK_LOCATION_UPDATE));
+        webView.getContext().registerReceiver(locationUpdateReceiver, new IntentFilter(Constants.CALLBACK_LOCATION_UPDATE));
         webView.getContext().registerReceiver(detectedActivitiesReceiver, new IntentFilter(Constants.CALLBACK_ACTIVITY_UPDATE));
 
         didBind = true;
@@ -253,40 +286,6 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         }
     }
 
-    private void createLocationUpdateReceiver() {
-        this.receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, final Intent intent) {
-                if(debug()) {
-                    Log.d(TAG, "Location Received, ready for callback");
-                }
-                if (locationUpdateCallback != null) {
-
-                    if(debug()) {
-                      Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
-                    }
-
-                    cordova.getThreadPool().execute(new Runnable() {
-                        public void run() {
-                            if(intent.getExtras() == null) {
-                                locationUpdateCallback.error("ERROR: Location Was Null");
-                            }
-
-                            JSONObject data = locationToJSON(intent.getExtras());
-                            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                            pluginResult.setKeepCallback(true);
-                            locationUpdateCallback.sendPluginResult(pluginResult);
-                        }
-                    });
-                } else {
-                    if(debug()) {
-                      Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
-                    }
-                    Log.w(TAG, "WARNING LOCATION UPDATE CALLBACK IS NULL, PLEASE RUN REGISTER LOCATION UPDATES");
-                }
-            }
-        };
-    }
 
     private void destroyLocationUpdateReceiver() {
         if (this.receiver != null) {

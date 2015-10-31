@@ -123,6 +123,8 @@ public class BackgroundLocationUpdateService
     private Boolean isDebugging;
     private String notificationTitle = "Background checking";
     private String notificationText = "ENABLED";
+    private Boolean useActivityDetection = false;
+
     private Boolean stopOnTerminate;
     private Boolean isRequestingActivity = false;
     private Boolean isRecording = false;
@@ -206,6 +208,9 @@ public class BackgroundLocationUpdateService
             isDebugging = Boolean.parseBoolean(intent.getStringExtra("isDebugging"));
             notificationTitle = intent.getStringExtra("notificationTitle");
             notificationText = intent.getStringExtra("notificationText");
+
+            useActivityDetection = Boolean.parseBoolean(intent.getStringExtra("useActivityDetection"));
+
 
             // Build the notification / pending intent
             Intent main = new Intent(this, BackgroundLocationServicesPlugin.class);
@@ -291,7 +296,10 @@ public class BackgroundLocationUpdateService
                Log.d(TAG, "- Start Recording Receiver");
             }
 
-            startDetectingActivities();
+            if(useActivityDetection) {
+              startDetectingActivities();
+            }
+
             startRecording();
         }
     };
@@ -302,8 +310,11 @@ public class BackgroundLocationUpdateService
             if(isDebugging) {
                 Log.d(TAG, "- Stop Recording Receiver");
             }
+            if(useActivityDetection) {
+              stopDetectingActivities();
+            }
+
             stopRecording();
-            stopDetectingActivities();
         }
     };
 
