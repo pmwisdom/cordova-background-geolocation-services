@@ -742,25 +742,18 @@ public class BackgroundLocationUpdateService
      * 1000:  least aggressive, least accurate, best for battery.
      */
     private Integer translateDesiredAccuracy(Integer accuracy) {
-        switch (accuracy) {
-            case 10000:
-                accuracy = LocationRequest.PRIORITY_NO_POWER;
-                break;
-            case 1000:
-                accuracy = LocationRequest.PRIORITY_LOW_POWER;
-                break;
-            case 100:
-                accuracy = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
-                break;
-            case 10:
-                accuracy = LocationRequest.PRIORITY_HIGH_ACCURACY;
-                break;
-            case 0:
-                accuracy = LocationRequest.PRIORITY_HIGH_ACCURACY;
-                break;
-            default:
-                accuracy = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+        if(accuracy <= 0) {
+            accuracy = LocationRequest.PRIORITY_HIGH_ACCURACY;
+        } else if(accuracy <= 100) {
+            accuracy = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+        } else if(accuracy  <= 1000) {
+            accuracy = LocationRequest.PRIORITY_LOW_POWER;
+        } else if(accuracy <= 10000) {
+            accuracy = LocationRequest.PRIORITY_NO_POWER;
+        } else {
+          accuracy = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
         }
+
         return accuracy;
     }
 
