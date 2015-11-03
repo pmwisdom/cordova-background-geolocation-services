@@ -67,7 +67,7 @@ bgLocationServices.start();
 
 
 ///later, to stop
-bgLocationServices.start();
+bgLocationServices.stop();
 ````
 
 
