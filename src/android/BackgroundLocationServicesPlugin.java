@@ -246,7 +246,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                     Log.d(TAG, "Location Received, ready for callback");
                 }
                 if (locationUpdateCallback != null) {
-                  
+
                     if(debug()) {
                       Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
                     }
