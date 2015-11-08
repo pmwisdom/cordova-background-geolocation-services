@@ -18,8 +18,6 @@ module.exports = {
             activityType        = config.activityType      || "OTHER",
             fences              = config.fences || null;
 
-            console.log("PNAME", this.pName)
-
         exec(function() {},
              function() {},
              'BackgroundLocationServices',

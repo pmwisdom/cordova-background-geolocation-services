@@ -116,11 +116,14 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             }
         } else if (ACTION_STOP.equalsIgnoreCase(action)) {
             isEnabled = false;
-            result = true;
-            activity.stopService(updateServiceIntent);
-            callbackContext.success();
+            
+            result = unbindServiceFromWebview(activity, updateServiceIntent);
 
-            destroyLocationUpdateReceiver();
+            if(result) {
+                callbackContext.success();
+            } else {
+                callbackContext.error("Failed To Stop The Service");
+            }
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
             try {
@@ -155,13 +158,8 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             callbackContext.success(PLUGIN_VERSION);
         } else if(ACTION_REGISTER_FOR_LOCATION_UPDATES.equalsIgnoreCase(action)) {
             result = true;
-            // if(debug()) {
-            //     Log.w(TAG, "WARNING: Anroid does not support callbacks yet. Use the HTTP configuration");
-            // }
             //Register the funcition for repeated location update
             locationUpdateCallback = callbackContext;
-
-            // callbackContext.error("Anroid does not support callbacks yet. Use the HTTP configuration");
         } else if(ACTION_AGGRESSIVE_TRACKING.equalsIgnoreCase(action)) {
             result = true;
             if(isEnabled) {
@@ -199,6 +197,23 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
       }
 
       return didBind;
+    }
+
+    private Boolean unbindServiceFromWebview(Context context, Intent intent) {
+        Boolean didUnbind = false;
+
+      try {
+        context.unbindService(serviceConnection);
+        context.stopService(intent);
+
+        destroyLocationUpdateReceiver();
+
+        didUnbind = true;
+      } catch(Exception e) {
+        Log.e(TAG, "ERROR UNBINDING SERVICE" + e);
+      }
+
+      return didUnbind;
     }
 
     @Override
