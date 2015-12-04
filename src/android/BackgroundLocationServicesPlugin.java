@@ -184,8 +184,13 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             activity.stopService(updateServiceIntent);
             callbackContext.success();
 
-            webView.getContext().unregisterReceiver(locationUpdateReceiver);
-            webView.getContext().unregisterReceiver(detectedActivitiesReceiver);
+            result = unbindServiceFromWebview(activity, updateServiceIntent);
+
+            if(result) {
+                callbackContext.success();
+            } else {
+                callbackContext.error("Failed To Stop The Service");
+            }
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
             try {
@@ -221,6 +226,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             callbackContext.success(PLUGIN_VERSION);
         } else if(ACTION_REGISTER_FOR_LOCATION_UPDATES.equalsIgnoreCase(action)) {
             result = true;
+            //Register the function for repeated location update
             locationUpdateCallback = callbackContext;
         } else if(ACTION_REGISTER_FOR_ACTIVITY_UPDATES.equalsIgnoreCase(action)) {
           result = true;
@@ -262,6 +268,24 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
       }
 
       return didBind;
+    }
+
+    private Boolean unbindServiceFromWebview(Context context, Intent intent) {
+        Boolean didUnbind = false;
+
+      try {
+        context.unbindService(serviceConnection);
+        context.stopService(intent);
+
+        webView.getContext().unregisterReceiver(locationUpdateReceiver);
+        webView.getContext().unregisterReceiver(detectedActivitiesReceiver);
+
+        didUnbind = true;
+      } catch(Exception e) {
+        Log.e(TAG, "ERROR UNBINDING SERVICE" + e);
+      }
+
+      return didUnbind;
     }
 
     @Override
