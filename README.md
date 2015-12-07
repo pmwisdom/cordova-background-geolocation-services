@@ -11,10 +11,10 @@ This plugin is for enabling background geolocation in your cordova project. It w
   * Test
   * Documentation
   * Demos (Regular Node, Meteor)
-  * Meteor Specific Atmosphere Package
+  * ~~Meteor Specific Atmosphere Package~~
   * Npm
  * Android:
-  * Integrated Detected Activities for better battery life
+  * ~~Integrated Detected Activities for better battery life~~
   * ~~Make Icon Notification user configureable~~
   * ~~Get Android callbacks to work, always.~~
  * iOS
@@ -46,13 +46,17 @@ var bgLocationServices =  window.plugins.backgroundLocationServices;
 
 //Congfigure Plugin
 bgLocationServices.configure({
+     //Both
      desiredAccuracy: 20, // Desired Accuracy of the location updates (lower means more accurate but more battery consumption)
      distanceFilter: 5, // (Meters) How far you must move from the last point to trigger a location update
-     notificationTitle: 'BG Plugin', // <-- (ANDROID ONLY), customize the title of the notification
-     notificationText: 'Tracking', // <-- (ANDROID ONLY), customize the text of the notification
      debug: true, // <-- Enable to show visual indications when you receive a background location update
      interval: 9000, // (Milliseconds) Requested Interval in between location updates.
-     fastestInterval: 5000, // <-- (Milliseconds) - (ANDROID ONLY) Fastest interval your app / server can handle updates
+     //Android Only
+     notificationTitle: 'BG Plugin', // customize the title of the notification
+     notificationText: 'Tracking', //customize the text of the notification
+     fastestInterval: 5000, // <-- (Milliseconds) Fastest interval your app / server can handle updates
+     useActivityDetection: true // Uses Activitiy detection to shut off gps when you are still (Greatly enhances Batterly Life)
+     
 });
 
 //Register a callback for location updates, this is where location objects will be sent in the background
@@ -60,6 +64,14 @@ bgLocationServices.registerForLocationUpdates(function(location) {
      console.log("We got an BG Update" + JSON.stringify(location));
 }, function(err) {
      console.log("Error: Didnt get an update", err);
+});
+
+//Register for Activity Updates (ANDROID ONLY)
+//Uses the Detected Activies API to send back an array of activities and their confidence levels
+bgLocationServices.registerForActivityUpdates(function(acitivites) {
+     console.log("We got an BG Update" + activities);
+}, function(err) {
+     console.log("Error: Something went wrong", err);
 });
 
 //Start the Background Tracker. When you enter the background tracking will start, and stop when you enter the foreground.
@@ -78,4 +90,6 @@ Enable Aggressive Mode: Sets Location tracking to its most accurate, most intens
 ````javascript
 bgLocationServices.startAggressiveTracking();
 ````
+
+By the way, credit to Christocracy and his great plugin that spurned this one. It should share the same concepts via javascript.
 
