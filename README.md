@@ -68,6 +68,7 @@ bgLocationServices.registerForLocationUpdates(function(location) {
 
 //Register for Activity Updates (ANDROID ONLY)
 //Uses the Detected Activies API to send back an array of activities and their confidence levels
+//See here for more information: //https://developers.google.com/android/reference/com/google/android/gms/location/DetectedActivity
 bgLocationServices.registerForActivityUpdates(function(acitivites) {
      console.log("We got an BG Update" + activities);
 }, function(err) {
