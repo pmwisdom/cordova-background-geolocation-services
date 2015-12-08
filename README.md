@@ -92,5 +92,5 @@ Enable Aggressive Mode: Sets Location tracking to its most accurate, most intens
 bgLocationServices.startAggressiveTracking();
 ````
 
-By the way, credit to Christocracy and his great plugin that spurned this one. It should share the same concepts via javascript.
+By the way, credit to Christocracy and his great [plugin](https://github.com/christocracy/cordova-plugin-background-geolocation/tree/0.3.7) that spurned this one. It should share the same concepts via javascript.
 
