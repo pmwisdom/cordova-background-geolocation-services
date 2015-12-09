@@ -55,7 +55,7 @@ bgLocationServices.configure({
      notificationTitle: 'BG Plugin', // customize the title of the notification
      notificationText: 'Tracking', //customize the text of the notification
      fastestInterval: 5000, // <-- (Milliseconds) Fastest interval your app / server can handle updates
-     useActivityDetection: true // Uses Activitiy detection to shut off gps when you are still (Greatly enhances Batterly Life)
+     useActivityDetection: true // Uses Activitiy detection to shut off gps when you are still (Greatly enhances Battery Life)
      
 });
 
