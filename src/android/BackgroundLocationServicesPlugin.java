@@ -170,10 +170,6 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
               updateServiceIntent.putExtra("aggressiveInterval", aggressiveInterval);
               updateServiceIntent.putExtra("activitiesInterval", activitiesInterval);
               updateServiceIntent.putExtra("useActivityDetection", useActivityDetection);
-                // //URL / PARAMS
-                // updateServiceIntent.putExtra("url", url);
-                // updateServiceIntent.putExtra("params", params);
-                // updateServiceIntent.putExtra("headers", headers);
 
               isServiceBound = bindServiceToWebview(activity, updateServiceIntent);
 
@@ -204,13 +200,10 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 this.isDebugging = data.getString(5);
                 this.notificationTitle = data.getString(6);
                 this.notificationText = data.getString(7);
-                // this.activityType = data.getString(8);
-                this.useActivityDetection = data.getString(8);
-                this.activitiesInterval = data.getString(9);
-                // this.url = data.getString(10);
-                // Log.d(TAG, "URL" + this.url);
-                // this.params = data.getString(11);
-                // this.headers = data.getString(12);
+                 this.activityType = data.getString(8);
+                this.useActivityDetection = data.getString(9);
+                this.activitiesInterval = data.getString(10);
+
 
 
             } catch (JSONException e) {
