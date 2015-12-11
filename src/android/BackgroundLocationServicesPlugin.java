@@ -200,7 +200,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 this.isDebugging = data.getString(5);
                 this.notificationTitle = data.getString(6);
                 this.notificationText = data.getString(7);
-                 this.activityType = data.getString(8);
+                //this.activityType = data.getString(8);
                 this.useActivityDetection = data.getString(9);
                 this.activitiesInterval = data.getString(10);
 
