@@ -40,6 +40,8 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
     public static final String ACTION_REGISTER_FOR_LOCATION_UPDATES = "registerForLocationUpdates";
     public static final String ACTION_REGISTER_FOR_ACTIVITY_UPDATES = "registerForActivityUpdates";
 
+    public static String APP_NAME = "";
+
     private Boolean isEnabled = false;
     private Boolean inBackground = false;
     private boolean isServiceBound = false;
@@ -107,9 +109,11 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                   }
                 }
 
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, daJSON);
-                pluginResult.setKeepCallback(true);
-                detectedActivitiesCallback.sendPluginResult(pluginResult);
+                if(detectedActivitiesCallback != null) {
+                  PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, daJSON);
+                  pluginResult.setKeepCallback(true);
+                  detectedActivitiesCallback.sendPluginResult(pluginResult);
+                }
               }
           });
       }
@@ -124,7 +128,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
             if (locationUpdateCallback != null) {
 
                 if(debug()) {
-                  Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
+                  Toast.makeText(context, "We received a location update", Toast.LENGTH_SHORT).show();
                 }
 
                 cordova.getThreadPool().execute(new Runnable() {
@@ -141,12 +145,24 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                 });
             } else {
                 if(debug()) {
-                  Toast.makeText(context, "We recieveived a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
+                  Toast.makeText(context, "We received a location update but locationUpdate was null", Toast.LENGTH_SHORT).show();
                 }
                 Log.w(TAG, "WARNING LOCATION UPDATE CALLBACK IS NULL, PLEASE RUN REGISTER LOCATION UPDATES");
             }
         }
     };
+
+    @Override
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+      super.initialize(cordova, webView);
+
+      Activity activity = this.cordova.getActivity();
+
+      APP_NAME = getApplicationName(activity);
+      //Need To namespace these in case more than one app is running this bg plugin
+      Constants.LOCATION_UPDATE = APP_NAME + Constants.LOCATION_UPDATE;
+      Constants.DETECTED_ACTIVITY_UPDATE = APP_NAME + Constants.DETECTED_ACTIVITY_UPDATE;
+    }
 
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
 
@@ -156,7 +172,7 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         updateServiceIntent = new Intent(activity, BackgroundLocationUpdateService.class);
 
         if (ACTION_START.equalsIgnoreCase(action) && !isEnabled) {
-            result = true;
+              result = true;
 
               callbackContext.success();
               updateServiceIntent.putExtra("desiredAccuracy", desiredAccuracy);
@@ -235,6 +251,10 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
         }
 
         return result;
+    }
+
+    public String getApplicationName(Context context) {
+      return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
     }
 
     public Boolean debug() {

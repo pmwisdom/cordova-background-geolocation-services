@@ -21,8 +21,8 @@ public class Constants {
   public static final String ACTIVITY_EXTRA = P_NAME + ".ACTIVITY_EXTRA";
 
   //Receiver paths for service
-  public static final String LOCATION_UPDATE = P_NAME + "LOCATION_UPDATE";
-  public static final String DETECTED_ACTIVITY_UPDATE = P_NAME + "DETECTED_ACTIVITY_UPDATE";
+  public static String LOCATION_UPDATE = P_NAME + "LOCATION_UPDATE";
+  public static String DETECTED_ACTIVITY_UPDATE = P_NAME + "DETECTED_ACTIVITY_UPDATE";
 
   private static final String ConstantsTAG = "Constants";
 

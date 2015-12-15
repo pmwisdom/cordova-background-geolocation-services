@@ -276,6 +276,8 @@ public class BackgroundLocationUpdateService
         Log.i(TAG, "- isDebugging: "        + isDebugging);
         Log.i(TAG, "- notificationTitle: "  + notificationTitle);
         Log.i(TAG, "- notificationText: "   + notificationText);
+        Log.i(TAG, "- useActivityDetection: "   + useActivityDetection);
+        Log.i(TAG, "- activityDetectionInterval: "   + activitiesInterval);
 
         //We want this service to continue running until it is explicitly stopped
         return START_REDELIVER_INTENT;
@@ -297,6 +299,7 @@ public class BackgroundLocationUpdateService
             }
 
             if(useActivityDetection) {
+              Log.d(TAG, "STARTING ACTIVITY DETECTION");
               startDetectingActivities();
             }
 
@@ -331,7 +334,6 @@ public class BackgroundLocationUpdateService
 
                 if(isDebugging) {
                     // Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
-                    // startTone("doodly_doo");
                     Log.d(TAG, "- locationUpdateReceiver" + location.toString());
                 }
 
@@ -362,6 +364,7 @@ public class BackgroundLocationUpdateService
         Intent mIntent = new Intent(Constants.CALLBACK_ACTIVITY_UPDATE);
         mIntent.putExtra(Constants.ACTIVITY_EXTRA, detectedActivities);
         getApplicationContext().sendBroadcast(mIntent);
+        Log.w(TAG, "Activity is recording" + isRecording);
 
         if(lastActivity.getType() == DetectedActivity.STILL && isRecording) {
           Toast.makeText(context, "Detected Activity was STILL, Stop recording", Toast.LENGTH_SHORT).show();
@@ -415,148 +418,6 @@ public class BackgroundLocationUpdateService
 
       return b;
     }
-
-    // private void postLocation(Location location) {
-    //
-    //     PostLocationTask task = new BackgroundLocationUpdateService.PostLocationTask();
-    //     Log.d(TAG, "Before post : Start Executor " +  task.getStatus());
-    //
-    //     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-    //         task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, location);
-    //     }
-    //     else {
-    //         task.execute(location);
-    //     }
-    //
-    //     Log.d(TAG, "After Post" + task.getStatus());
-    //
-    // }
-    //
-    // private class PostLocationTask extends AsyncTask<Object, Integer, Boolean> {
-    //
-    //     @Override
-    //     protected Boolean doInBackground(Object... objects) {
-    //         Log.d(TAG, "Executing PostLocationTask#doInBackground");
-    //         return postLocationSync((Location)objects[0]);
-    //     }
-    //
-    //     @Override
-    //     protected void onPostExecute(Boolean result) {
-    //         Log.d(TAG, "PostLocationTask#onPostExecture");
-    //     }
-    // }
-    //
-    // private boolean postLocationSync(Location l) {
-    //     if (l == null) {
-    //         Log.w(TAG, "postLocation: null location");
-    //         return false;
-    //     }
-    //     try {
-    //         lastUpdateTime = SystemClock.elapsedRealtime();
-    //         Log.i(TAG, "Posting  native location update: " + l);
-    //
-    //         //Gets a http OR https tolerant client, supports both modes
-    //         DefaultHttpClient httpClient = getTolerantClient();
-    //
-    //         HttpPost request = new HttpPost(url);
-    //
-    //         //Shove our location data into a JSON obhject
-    //         JSONObject location = new JSONObject();
-    //         location.put("latitude", l.getLatitude());
-    //         location.put("longitude", l.getLongitude());
-    //         location.put("accuracy", l.getAccuracy());
-    //         location.put("speed", l.getSpeed());
-    //         location.put("bearing", l.getBearing());
-    //         location.put("altitude", l.getAltitude());
-    //
-    //         params.put("location", location);
-    //
-    //         Log.i(TAG, "Location To Be Posted: " + location.toString());
-    //
-    //         //Create a string entity to for our param keys
-    //         StringEntity se = new StringEntity(params.toString());
-    //         request.setEntity(se);
-    //         request.setHeader("Accept", "application/json");
-    //         request.setHeader("Content-type", "application/json");
-    //
-    //         //Loop over our header keys and add them to our request
-    //         Iterator<String> headkeys = headers.keys();
-    //         while (headkeys.hasNext()) {
-    //             String headkey = headkeys.next();
-    //             if (headkey != null) {
-    //                 Log.d(TAG, "Adding Header: " + headkey + " : " + (String) headers.getString(headkey));
-    //                 request.setHeader(headkey, (String) headers.getString(headkey));
-    //             }
-    //         }
-    //
-    //         Log.d(TAG, "Posting to " + request.getURI().toString());
-    //         HttpResponse response = httpClient.execute(request);
-    //         Log.i(TAG, "Response received: " + response.getStatusLine());
-    //
-    //         //Get the status code that the http request sends back if there is any
-    //         //This tells our plugin what to do in certain cases
-    //         int res = response.getStatusLine().getStatusCode();
-    //
-    //         //Users may fire a request code back to the plugin to initiate certain behavior:
-    //         //Codes:
-    //         //200 : Does nothing, simply there to mark that it received a pong
-    //         //201 : Sets the location update receiver to aggresive mode -- useful for pin pointing a user for a short period of time
-    //         //401 : Sets the location update receiver to kill mode -- useful for killing the clients location updates when their client cant (main app dead)
-    //         switch (res) {
-    //             case 200:
-    //                 return true;
-    //             case 201:
-    //                 Log.w(TAG, "Plugin received a request to initiate aggresive mode");
-    //                 if (!fastestSpeed) {
-    //                     detachRecorder();
-    //                     desiredAccuracy = 10;
-    //                     fastestInterval = 500;
-    //                     interval = 1000;
-    //                     attachRecorder();
-    //
-    //                     Log.e(TAG, "Changed Location params" + locationRequest.toString());
-    //                     fastestSpeed = true;
-    //                 }
-    //                 return true;
-    //             case 410:
-    //                 Log.e(TAG, "ALERT --- : Got kill signal from server -- stopping location updates and killing update services");
-    //                 this.stopRecording();
-    //                 this.cleanUp();
-    //                 return false;
-    //             default:
-    //                 return false;
-    //         }
-    //
-    //     } catch (Throwable e) {
-    //         Log.w(TAG, "Exception posting location: " + e);
-    //         e.printStackTrace();
-    //         return false;
-    //     }
-    // }
-    //
-    // //Retrieves the url string, and does the extra work required to make an https request if it detects https.
-    // //Returns an DefaultHttpClient
-    // public DefaultHttpClient getTolerantClient() {
-    //     DefaultHttpClient client = new DefaultHttpClient();
-    //
-    //     if(!(url.substring(0, 5)).equals("https")) {
-    //         return client;
-    //     }
-    //
-    //     HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-    //
-    //     SchemeRegistry registry = new SchemeRegistry();
-    //     SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
-    //     socketFactory.setHostnameVerifier((X509HostnameVerifier) hostnameVerifier);
-    //     registry.register(new Scheme("https", socketFactory, 443));
-    //     SingleClientConnManager mgr = new SingleClientConnManager(client.getParams(), registry);
-    //     DefaultHttpClient httpClient = new DefaultHttpClient(mgr, client.getParams());
-    //
-    //     // Set verifier
-    //     HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
-    //
-    //     return httpClient;
-    // }
 
     private boolean enabled = false;
     private boolean startRecordingOnConnect = true;
@@ -618,7 +479,7 @@ public class BackgroundLocationUpdateService
       } else if (detectedActivitiesAPI.isConnected()) {
         ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(detectedActivitiesAPI, detectedActivitiesPI);
           if(isDebugging) {
-              Log.d(TAG, "- Recorder detached - stop recording location updates");
+              Log.d(TAG, "- Recorder detached - stop recording activity updates");
           }
       } else {
           detectedActivitiesAPI.connect();
@@ -627,6 +488,7 @@ public class BackgroundLocationUpdateService
 
 
     public void startRecording() {
+        Log.w(TAG, "Started Recording Locations");
         this.startRecordingOnConnect = true;
         attachRecorder();
     }
@@ -642,7 +504,7 @@ public class BackgroundLocationUpdateService
                Log.w(TAG, "Activity Client Connected");
                ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
                        detectedActivitiesAPI,
-                       500,
+                       activitiesInterval,
                        detectedActivitiesPI
                );
            }
@@ -709,7 +571,7 @@ public class BackgroundLocationUpdateService
             LocationServices.FusedLocationApi.removeLocationUpdates(locationClientAPI, locationUpdatePI);
             this.isRecording = false;
             if(isDebugging) {
-                Log.d(TAG, "- Recorder detached - stop recording location updates");
+                Log.w(TAG, "- Recorder detached - stop recording location updates");
             }
         } else {
             locationClientAPI.connect();
@@ -766,30 +628,6 @@ public class BackgroundLocationUpdateService
         }
 
         return accuracy;
-    }
-
-    /**
-     * Plays debug sound
-     * @param name
-     */
-    private void startTone(String name) {
-        int tone = 0;
-        int duration = 1000;
-
-        if (name.equals("beep")) {
-            tone = ToneGenerator.TONE_PROP_BEEP;
-        } else if (name.equals("beep_beep_beep")) {
-            tone = ToneGenerator.TONE_CDMA_CONFIRM;
-        } else if (name.equals("long_beep")) {
-            tone = ToneGenerator.TONE_CDMA_ABBR_ALERT;
-        } else if (name.equals("doodly_doo")) {
-            tone = ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE;
-        } else if (name.equals("chirp_chirp_chirp")) {
-            tone = ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD;
-        } else if (name.equals("dialtone")) {
-            tone = ToneGenerator.TONE_SUP_RINGTONE;
-        }
-        toneGenerator.startTone(tone, duration);
     }
 
     private boolean isNetworkConnected() {
