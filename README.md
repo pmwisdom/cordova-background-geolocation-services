@@ -22,7 +22,7 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 ### Techniques used:
 
-**Android** : Uses Fused Location API and soon Activity Recognition API to serve location updates endlessly.
+**Android** : Uses Fused Location API and Activity Recognition API to serve location updates endlessly.
 
 **iOS** : Uses a timer based approach to enable endless background tracking.
 
