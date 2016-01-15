@@ -28,6 +28,19 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 ###Setup: 
 * Need to make sure you have Google Play Services AND Google Repository installed via your android-sdk manager prior to building your application with this. It will be under the extras part of the sdk manager. More information can be found here: http://developer.android.com/sdk/installing/adding-packages.html.
+* 
+
+###Installation:
+
+Cordova :
+````
+cordova plugin add https://github.com/pmwisdom/cordova-background-geolocation-services.git
+````
+
+Meteor : 
+````
+meteor add mirrorcell:background-geolocation-plus
+````
 
 ### How to use: 
 
