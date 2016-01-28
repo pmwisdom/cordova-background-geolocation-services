@@ -4,17 +4,6 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Random;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,16 +56,6 @@ import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 
 import static java.lang.Math.*;
-
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.X509TrustManager;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -138,10 +117,6 @@ public class BackgroundLocationUpdateService
 
     private LocationRequest locationRequest;
 
-    // private JSONObject params;
-    // private String url = "localhost:3000/location";
-    // private JSONObject headers;
-
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -186,16 +161,6 @@ public class BackgroundLocationUpdateService
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Received start id " + startId + ": " + intent);
         if (intent != null) {
-
-            // try {
-            //     params = new JSONObject(intent.getStringExtra("params"));
-            //     headers = new JSONObject(intent.getStringExtra("headers"));
-            // } catch (JSONException e) {
-            //     e.printStackTrace();
-            // }
-
-            //Get our POST url and configure options from the intent
-            // url = intent.getStringExtra("url");
 
             distanceFilter = Integer.parseInt(intent.getStringExtra("distanceFilter"));
             desiredAccuracy = Integer.parseInt(intent.getStringExtra("desiredAccuracy"));
