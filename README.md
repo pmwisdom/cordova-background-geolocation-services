@@ -22,12 +22,25 @@ This plugin is for enabling background geolocation in your cordova project. It w
 
 ### Techniques used:
 
-**Android** : Uses Fused Location API and soon Activity Recognition API to serve location updates endlessly.
+**Android** : Uses Fused Location API and Activity Recognition API to serve location updates endlessly.
 
 **iOS** : Uses a timer based approach to enable endless background tracking.
 
 ###Setup: 
 * Need to make sure you have Google Play Services AND Google Repository installed via your android-sdk manager prior to building your application with this. It will be under the extras part of the sdk manager. More information can be found here: http://developer.android.com/sdk/installing/adding-packages.html.
+* 
+
+###Installation:
+
+Cordova :
+````
+cordova plugin add https://github.com/pmwisdom/cordova-background-geolocation-services.git
+````
+
+Meteor : 
+````
+meteor add mirrorcell:background-geolocation-plus
+````
 
 ### How to use: 
 
