@@ -13,8 +13,7 @@
         <engine name="cordova" version=">=3.0.0"/>
     </engines>
 
-    <dependency id="org.apache.cordova.geolocation"/>
-    <dependency id="org.apache.cordova.dialogs"/>
+    <dependency id="cordova-plugin-geolocation"/>
     <framework src="com.google.android.gms:play-services-location:+" />
 
     <js-module src="www/BackgroundLocationServices.js" name="BackgroundLocationServices">
