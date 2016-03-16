@@ -96,14 +96,5 @@ bgLocationServices.start();
 bgLocationServices.stop();
 ````
 
-
-Other methods -
-
-Enable Aggressive Mode: Sets Location tracking to its most accurate, most intensive state.
-
-````javascript
-bgLocationServices.startAggressiveTracking();
-````
-
 By the way, credit to Christocracy and his great [plugin](https://github.com/christocracy/cordova-plugin-background-geolocation/tree/0.3.7) that spurned this one. It should share the same concepts via javascript.
 
