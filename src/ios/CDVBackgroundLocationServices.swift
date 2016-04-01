@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 let TAG = "[LocationServices]";
 let PLUGIN_VERSION = "1.0";
