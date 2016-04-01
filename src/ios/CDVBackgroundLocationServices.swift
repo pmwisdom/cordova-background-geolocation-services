@@ -18,7 +18,6 @@ func log(message: String){
     }
 }
 
-var LocationServiceWebView: UIWebView?
 var locationManager = LocationManager();
 var taskManager = TaskManager();
 
@@ -44,8 +43,6 @@ var locationCommandDelegate:CDVCommandDelegate?;
     //Initialize things here (basically on run)
     override func pluginInitialize() {
         super.pluginInitialize();
-
-        LocationServiceWebView = self.webView
 
         locationManager.requestLocationPermissions();
         self.promptForNotificationPermission();
