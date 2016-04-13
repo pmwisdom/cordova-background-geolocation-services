@@ -24,6 +24,7 @@
     <platform name="android">
         <source-file src="src/android/BackgroundLocationServicesPlugin.java" target-dir="src/com/flybuy/cordova/location"/>
         <source-file src="src/android/BackgroundLocationUpdateService.java" target-dir="src/com/flybuy/cordova/location"/>
+        <source-file src="src/android/PermissionHelper.java" target-dir="src/com/flybuy/cordova/location"/>
         <source-file src="src/android/Constants.java" target-dir="src/com/flybuy/cordova/location"/>
 
         <source-file src="src/android/location_icon.png" target-dir="res/drawable"/>

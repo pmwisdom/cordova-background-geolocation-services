@@ -298,7 +298,6 @@ public class BackgroundLocationUpdateService
             if (location != null) {
 
                 if(isDebugging) {
-                    // Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "- locationUpdateReceiver" + location.toString());
                 }
 
@@ -314,6 +313,12 @@ public class BackgroundLocationUpdateService
             }
         }
     };
+
+    private void showDebugToast(Context ctx, String msg) {
+        if(isDebugging) {
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private BroadcastReceiver detectedActivitiesReceiver = new BroadcastReceiver() {
       @Override
@@ -332,11 +337,11 @@ public class BackgroundLocationUpdateService
         Log.w(TAG, "Activity is recording" + isRecording);
 
         if(lastActivity.getType() == DetectedActivity.STILL && isRecording) {
-          Toast.makeText(context, "Detected Activity was STILL, Stop recording", Toast.LENGTH_SHORT).show();
-          stopRecording();
+            showDebugToast(context, "Detected Activity was STILL, Stop recording");
+            stopRecording();
         } else if(lastActivity.getType() != DetectedActivity.STILL && !isRecording) {
-          Toast.makeText(context, "Detected Activity was ACTIVE, Start Recording", Toast.LENGTH_SHORT).show();
-          startRecording();
+            showDebugToast(context, "Detected Activity was ACTIVE, Start Recording");
+            startRecording();
         }
         //else do nothing
       }
@@ -475,8 +480,8 @@ public class BackgroundLocationUpdateService
            }
            @Override
            public void onConnectionSuspended(int i) {
-              Log.w(TAG, "Connection To Activity Suspended");
-              Toast.makeText(getApplicationContext(), "Activity Client Suspended", Toast.LENGTH_SHORT).show();
+               Log.w(TAG, "Connection To Activity Suspended");
+               showDebugToast(getApplicationContext(), "Activity Client Suspended");
            }
        };
 
@@ -612,9 +617,7 @@ public class BackgroundLocationUpdateService
         this.stopRecording();
         this.cleanUp();
 
-        if (isDebugging) {
-            Toast.makeText(this, "Background location tracking stopped", Toast.LENGTH_SHORT).show();
-        }
+        showDebugToast(this, "Background location tracking stopped");
         return super.stopService(intent);
     }
 
