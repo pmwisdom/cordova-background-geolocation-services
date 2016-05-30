@@ -96,5 +96,9 @@ bgLocationServices.start();
 bgLocationServices.stop();
 ````
 
+### Known Issues:
+
+Phonegap Build : Swift files are not officially supported as of yet on phonegap build, so if there is a problem installing it in that environment, there isn't anything I can do until they are supported.
+
 By the way, credit to Christocracy and his great [plugin](https://github.com/christocracy/cordova-plugin-background-geolocation/tree/0.3.7) that spurned this one. It should share the same concepts via javascript.
 
