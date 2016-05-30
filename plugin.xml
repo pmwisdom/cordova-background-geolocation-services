@@ -14,7 +14,6 @@
     </engines>
 
     <dependency id="cordova-plugin-geolocation"/>
-    <framework src="com.google.android.gms:play-services-location:+" />
 
     <js-module src="www/BackgroundLocationServices.js" name="BackgroundLocationServices">
         <clobbers target="plugins.backgroundLocationServices"/>
@@ -22,6 +21,8 @@
 
     <!-- android -->
     <platform name="android">
+        <framework src="com.google.android.gms:play-services-location:+" />
+
         <source-file src="src/android/BackgroundLocationServicesPlugin.java" target-dir="src/com/flybuy/cordova/location"/>
         <source-file src="src/android/BackgroundLocationUpdateService.java" target-dir="src/com/flybuy/cordova/location"/>
         <source-file src="src/android/PermissionHelper.java" target-dir="src/com/flybuy/cordova/location"/>
