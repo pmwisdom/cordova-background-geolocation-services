@@ -104,9 +104,23 @@ var locationCommandDelegate:CDVCommandDelegate?;
         locationCommandDelegate = commandDelegate;
     }
 
+    func registerForActivityUpdates(command : CDVInvokedUrlCommand) {
+        log("Activity Updates not enabled on IOS");
+
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString: "Activity Updates not enabled on IOS");
+        commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId);
+    }
+
+
     func start(command: CDVInvokedUrlCommand) {
         log("Started");
         enabled = true;
+        
+        log("Are we in the background? \(background)");
+        
+        if(background) {
+            locationManager.startUpdating();
+        }
 
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
         commandDelegate!.sendPluginResult(pluginResult, callbackId:command.callbackId)
