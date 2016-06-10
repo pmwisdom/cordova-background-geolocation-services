@@ -138,16 +138,30 @@ public class BackgroundLocationServicesPlugin extends CordovaPlugin {
                   Toast.makeText(context, "We received a location update", Toast.LENGTH_SHORT).show();
                 }
 
+                final Bundle b = intent.getExtras();
+                final String errorString = b.getString("error");
+
                 cordova.getThreadPool().execute(new Runnable() {
                     public void run() {
-                        if(intent.getExtras() == null) {
-                            locationUpdateCallback.error("ERROR: Location Was Null");
+                        PluginResult pluginResult;
+
+                        if(b == null) {
+                            String unkownError = "An Unkown Error has occurred, there was no Location attached";
+                            pluginResult = new PluginResult(PluginResult.Status.ERROR, unkownError);
+
+                        } else if(errorString != null) {
+                            Log.d(TAG, "ERROR " + errorString);
+                            pluginResult = new PluginResult(PluginResult.Status.ERROR, errorString);
+
+                        } else {
+                            JSONObject data = locationToJSON(intent.getExtras());
+                            pluginResult = new PluginResult(PluginResult.Status.OK, data);
                         }
 
-                        JSONObject data = locationToJSON(intent.getExtras());
-                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-                        pluginResult.setKeepCallback(true);
-                        locationUpdateCallback.sendPluginResult(pluginResult);
+                        if(pluginResult != null) {
+                            pluginResult.setKeepCallback(true);
+                            locationUpdateCallback.sendPluginResult(pluginResult);
+                        }
                     }
                 });
             } else {

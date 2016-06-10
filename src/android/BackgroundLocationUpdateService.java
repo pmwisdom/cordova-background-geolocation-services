@@ -47,6 +47,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -67,6 +68,8 @@ import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import java.util.ArrayList;
+import java.util.Set;
+
 import com.google.android.gms.common.ConnectionResult;
 
 //Detected Activities imports
@@ -309,7 +312,15 @@ public class BackgroundLocationUpdateService
                mIntent.putExtras(createLocationBundle(location));
                getApplicationContext().sendBroadcast(mIntent);
 
-                // postLocation(location);
+            } else {
+                LocationAvailability la = LocationAvailability.extractLocationAvailability(intent);
+                Boolean isAvailable = la.isLocationAvailable();
+
+                if(isAvailable == false) {
+                    Intent mIntent = new Intent(Constants.CALLBACK_LOCATION_UPDATE);
+                    mIntent.putExtra("error", "Location Provider is not available. Maybe GPS is disabled or the provider was rejected?");
+                    getApplicationContext().sendBroadcast(mIntent);
+                }
             }
         }
     };
