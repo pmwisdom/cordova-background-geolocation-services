@@ -443,6 +443,16 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
         log("LOCATION ERROR: \(error.description)");
 
+        locationCommandDelegate?.runInBackground({
+
+            var result:CDVPluginResult?;
+
+            result = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString: error.description);
+            result!.setKeepCallbackAsBool(true);
+            locationCommandDelegate?.sendPluginResult(result, callbackId:locationUpdateCallback);
+        });
+
+
     }
     func locationManager(manager: CLLocationManager, didFinishDeferredUpdatesWithError error: NSError?) {
         log("Location Manager FAILED deferred \(error!.description)");
