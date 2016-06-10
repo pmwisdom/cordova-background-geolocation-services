@@ -49,19 +49,19 @@ var locationCommandDelegate:CDVCommandDelegate?;
 
         NSNotificationCenter.defaultCenter().addObserver(
             self,
-            selector: "onResume",
+            selector: #selector(BackgroundLocationServices.onResume),
             name: UIApplicationWillEnterForegroundNotification,
             object: nil);
 
         NSNotificationCenter.defaultCenter().addObserver(
             self,
-            selector: "onSuspend",
+            selector: #selector(BackgroundLocationServices.onSuspend),
             name: UIApplicationDidEnterBackgroundNotification,
             object: nil);
 
         NSNotificationCenter.defaultCenter().addObserver(
             self,
-            selector: "willResign",
+            selector: #selector(BackgroundLocationServices.willResign),
             name: UIApplicationWillResignActiveNotification,
             object: nil);
     }
@@ -115,11 +115,11 @@ var locationCommandDelegate:CDVCommandDelegate?;
     func start(command: CDVInvokedUrlCommand) {
         log("Started");
         enabled = true;
-        
+
         log("Are we in the background? \(background)");
-        
+
         if(background) {
-            locationManager.startUpdating();
+            locationManager.startUpdating(false);
         }
 
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -179,7 +179,7 @@ var locationCommandDelegate:CDVCommandDelegate?;
         background = true;
 
         if(enabled) {
-            locationManager.startUpdating();
+            locationManager.startUpdating(false);
         }
     }
 
@@ -188,7 +188,7 @@ var locationCommandDelegate:CDVCommandDelegate?;
         background = true;
 
         if(enabled) {
-            locationManager.startUpdating();
+            locationManager.startUpdating(false);
         }
     }
 
@@ -344,20 +344,26 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
         distanceFilter = 0;
     }
 
-    func startUpdating() {
-        self.enableBackgroundLocationUpdates();
-        self.updating = true;
+    // Force here is to make sure we are only starting the location updates once, until we want to restart them
+    // Was having issues with it starting, and then starting a second time through resign on some builds.
+    func startUpdating(force : Bool) {
+        if(!self.updating || force) {
+            self.enableBackgroundLocationUpdates();
+            self.updating = true;
 
-        self.manager.delegate = self;
-        self.manager.desiredAccuracy = desiredAccuracy;
-        self.manager.distanceFilter = distanceFilter;
+            self.manager.delegate = self;
+            self.manager.desiredAccuracy = desiredAccuracy;
+            self.manager.distanceFilter = distanceFilter;
 
-        self.manager.startUpdatingLocation();
-        self.manager.startMonitoringSignificantLocationChanges();
+            self.manager.startUpdatingLocation();
+            self.manager.startMonitoringSignificantLocationChanges();
 
-        taskManager.beginNewBackgroundTask();
+            taskManager.beginNewBackgroundTask();
 
-        log("Starting Location Updates!");
+            log("Starting Location Updates!");
+        } else {
+            log("A request was made to start Updating, but the plugin was already updating")
+        }
     }
 
     func stopUpdating() {
@@ -374,7 +380,6 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     }
 
     func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        log("Got location update");
         let locationArray = locations as NSArray
         let locationObj = locationArray.lastObject as! CLLocation
 
@@ -398,14 +403,14 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 
         taskManager.beginNewBackgroundTask();
 
-        locationTimer = NSTimer.scheduledTimerWithTimeInterval(interval, target: self, selector: Selector("restartUpdates"), userInfo: nil, repeats: false);
+        locationTimer = NSTimer.scheduledTimerWithTimeInterval(interval, target: self, selector: #selector(LocationManager.restartUpdates), userInfo: nil, repeats: false);
 
         if(stopUpdateTimer != nil) {
             stopUpdateTimer.invalidate();
             stopUpdateTimer = nil;
         }
 
-        stopUpdateTimer = NSTimer.scheduledTimerWithTimeInterval(syncSeconds, target: self, selector: Selector("syncAfterXSeconds"), userInfo: nil, repeats: false);
+        stopUpdateTimer = NSTimer.scheduledTimerWithTimeInterval(syncSeconds, target: self, selector: #selector(LocationManager.syncAfterXSeconds), userInfo: nil, repeats: false);
     }
 
     func restartUpdates() {
@@ -419,7 +424,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
         self.manager.desiredAccuracy = desiredAccuracy;
         self.manager.distanceFilter = distanceFilter;
 
-        self.startUpdating();
+        self.startUpdating(true);
     }
 
     func syncAfterXSeconds() {
@@ -507,7 +512,7 @@ class TaskManager : NSObject {
         if(app.respondsToSelector("endBackgroundTask")) {
             let count = self._bgTaskList.count;
 
-            for var i = 0; i < count; i++ {
+            for _ in 0 ..< count {
                 let bgTaskId = self._bgTaskList[0] as Int;
                 log("Ending Background Task  with ID \(bgTaskId)");
                 app.endBackgroundTask(bgTaskId);
