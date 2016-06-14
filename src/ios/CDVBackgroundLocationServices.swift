@@ -129,7 +129,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
 
         if(background) {
             locationManager.startUpdating(false);
-//            activityManager.startDetection();
+            activityManager.startDetection();
         }
 
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -141,7 +141,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
         enabled = false;
 
         locationManager.stopBackgroundTracking();
-//        activityManager.stopDetection();
+        activityManager.stopDetection();
 
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
         commandDelegate!.sendPluginResult(pluginResult, callbackId:command.callbackId)
@@ -183,7 +183,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
 
         taskManager.endAllBackgroundTasks();
         locationManager.stopUpdating();
-//        activityManager.stopDetection();
+        activityManager.stopDetection();
     }
 
     func onSuspend() {
@@ -192,7 +192,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
 
         if(enabled) {
             locationManager.startUpdating(false);
-//            activityManager.startDetection();
+            activityManager.startDetection();
         }
     }
 
@@ -332,8 +332,8 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             let accuracy = bestLocation!.horizontalAccuracy;
 
             let msg = "Got Location Update:  { \(latitude) - \(longitude) }  Accuracy: \(accuracy)";
-            log(msg);
-            NotificationManager.manager.notify(msg);
+//            log(msg);
+//            NotificationManager.manager.notify(msg);
 
             locationCommandDelegate?.runInBackground({
 
@@ -493,9 +493,15 @@ class ActivityManager : NSObject {
     var isStationary = false;
     
     override init() {
+        super.init();
+        
         if(CMMotionActivityManager.isActivityAvailable()) {
+            log("Activity Manager is Available");
+            
             self.manager = CMMotionActivityManager();
             self.available = true;
+        } else {
+            log("Activity Manager is not Available");
         }
     }
     
@@ -521,23 +527,89 @@ class ActivityManager : NSObject {
 //        }
 //    }
 //    
+    
+    func confidenceToInt(confidence : CMMotionActivityConfidence) -> Int {
+        var confidenceMult = 0;
+        
+        switch(confidence) {
+            case CMMotionActivityConfidence.High :
+                confidenceMult = 100;
+                break;
+            case CMMotionActivityConfidence.Medium :
+                confidenceMult = 50;
+                break;
+            case CMMotionActivityConfidence.Low :
+                confidenceMult = 0;
+                break;
+            default:
+                confidenceMult = 0;
+                break;
+        }
+        
+        return confidenceMult;
+    }
+    
+    func getActivityConfidence(detectedActivity : Bool, multiplier : Int) -> Int {
+        return (detectedActivity ? 1 : 0) * multiplier;
+    }
+    
+    func activitiesToArray(data:CMMotionActivity) -> NSDictionary {
+        let confidenceMult = self.confidenceToInt(data.confidence);
+        
+        var detectedActivities:Dictionary = [
+            "UNKOWN" : self.getActivityConfidence(data.unknown, multiplier: confidenceMult),
+            "STILL" : self.getActivityConfidence(data.stationary, multiplier: confidenceMult),
+            "WALKING" : self.getActivityConfidence(data.walking, multiplier: confidenceMult),
+            "RUNNING" : self.getActivityConfidence(data.running, multiplier: confidenceMult),
+            "IN_VEHICLE" : self.getActivityConfidence(data.automotive, multiplier: confidenceMult)
+        ];
+        
+        // Cycling Only available on IOS 8.0
+        if #available(iOS 8.0, *) {
+            detectedActivities["ON_BICYCLE"] = self.getActivityConfidence(data.cycling, multiplier: confidenceMult)
+        }
+        
+        NSLog("DETECTED ACTIVITIES %@", detectedActivities);
+        
+        return detectedActivities;
+    }
+
+    func sendActivitiesToCallback(activities : NSDictionary) {
+        if(activityCommandDelegate != nil) {
+            activityCommandDelegate?.runInBackground({
+                
+                var result:CDVPluginResult?;
+//                let loc = self.locationToDict(bestLocation!) as [NSObject: AnyObject];
+                
+                result = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary:activities as [NSObject: AnyObject]);
+                result!.setKeepCallbackAsBool(true);
+                activityCommandDelegate?.sendPluginResult(result, callbackId:activityUpdateCallback);
+            });
+        }
+    }
+    
     func startDetection() {
+        NSLog("Activity Manager - Starting Detection %@", self.available);
         if(self.available) {
             self.updating = true;
             
             manager!.startActivityUpdatesToQueue(NSOperationQueue()) { data in
                 if let data = data {
                     dispatch_async(dispatch_get_main_queue(), {
-                        NSLog("We received an activity update %@", data);
+                        NSLog("----------------------------------------------------We received an activity update %@", data);
                         if(data.stationary == true) {
                             self.isStationary = true;
                         } else {
                             self.isStationary = false
                         }
                         
+                        self.sendActivitiesToCallback(self.activitiesToArray(data));
+                        
                     })
                 }
             }
+        } else {
+            NSLog("Activity Manager - Not available on your device");
         }
     }
     
