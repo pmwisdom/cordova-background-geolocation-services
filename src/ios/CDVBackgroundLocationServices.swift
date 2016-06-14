@@ -252,6 +252,8 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     var locationArray = [CLLocation]();
     var updating = false;
     var aggressive = false;
+    
+    var lowPowerMode = false;
 
     override init() {
         super.init();
@@ -332,8 +334,8 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             let accuracy = bestLocation!.horizontalAccuracy;
 
             let msg = "Got Location Update:  { \(latitude) - \(longitude) }  Accuracy: \(accuracy)";
-//            log(msg);
-//            NotificationManager.manager.notify(msg);
+            log(msg);
+            NotificationManager.manager.notify(msg);
 
             locationCommandDelegate?.runInBackground({
 
@@ -366,8 +368,8 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             self.updating = true;
 
             self.manager.delegate = self;
-            self.manager.desiredAccuracy = desiredAccuracy;
-            self.manager.distanceFilter = distanceFilter;
+            self.manager.desiredAccuracy = self.lowPowerMode ? kCLLocationAccuracyThreeKilometers : desiredAccuracy;
+            self.manager.distanceFilter = self.lowPowerMode ? 10.0 : distanceFilter;
 
             self.manager.startUpdatingLocation();
             self.manager.startMonitoringSignificantLocationChanges();
@@ -417,7 +419,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 
         taskManager.beginNewBackgroundTask();
 
-        locationTimer = NSTimer.scheduledTimerWithTimeInterval(interval, target: self, selector: #selector(LocationManager.restartUpdates), userInfo: nil, repeats: false);
+        locationTimer = NSTimer.scheduledTimerWithTimeInterval(activityManager.isStationary ? 50 : interval, target: self, selector: #selector(LocationManager.restartUpdates), userInfo: nil, repeats: false);
 
         if(stopUpdateTimer != nil) {
             stopUpdateTimer.invalidate();
@@ -433,6 +435,8 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             locationTimer.invalidate();
             locationTimer = nil;
         }
+        
+        self.lowPowerMode = false;
 
         self.manager.delegate = self;
         self.manager.desiredAccuracy = desiredAccuracy;
@@ -440,8 +444,15 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 
         self.startUpdating(true);
     }
+    
+    func setGPSLowPower() {
+        log("Setting GPS To Low Power Mode ");
+        self.lowPowerMode = true;
+        self.startUpdating(true);
+    }
 
     func syncAfterXSeconds() {
+        self.setGPSLowPower();
         self.sync();
         log("Stopped Location Updates After \(syncSeconds)");
     }
@@ -504,29 +515,6 @@ class ActivityManager : NSObject {
             log("Activity Manager is not Available");
         }
     }
-    
-//    func activityTypeToString(activityType:NSString) -> NSString {
-//        var type = "UNKNOWN";
-//        
-//        switch(activityType) {
-//            case data.stationary
-//        }
-//    }
-    
-    
-//    
-//    func sendActivityCallback(activityData : NSObject) {
-//        var activityArray : NSArray;
-//        
-//        if(activityCommandDelegate != nil) {
-//            let activityObj:Dictionary = [
-//                "activityType" : activityData.
-//            ]
-//        } else {
-//            log("Got activity update but do not have a command delegate to send it to")
-//        }
-//    }
-//    
     
     func confidenceToInt(confidence : CMMotionActivityConfidence) -> Int {
         var confidenceMult = 0;
@@ -596,11 +584,15 @@ class ActivityManager : NSObject {
             manager!.startActivityUpdatesToQueue(NSOperationQueue()) { data in
                 if let data = data {
                     dispatch_async(dispatch_get_main_queue(), {
-                        NSLog("----------------------------------------------------We received an activity update %@", data);
                         if(data.stationary == true) {
                             self.isStationary = true;
                         } else {
+                            if(self.isStationary == true) {
+                                locationManager.restartUpdates();
+                            }
+                            
                             self.isStationary = false
+                            
                         }
                         
                         self.sendActivitiesToCallback(self.activitiesToArray(data));
