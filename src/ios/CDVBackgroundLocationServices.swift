@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import CoreMotion
 
+
 let TAG = "[LocationServices]";
 let PLUGIN_VERSION = "1.0";
 
@@ -373,6 +374,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             self.updating = true;
 
             self.manager.delegate = self;
+
             self.manager.desiredAccuracy = self.lowPowerMode ? kCLLocationAccuracyThreeKilometers : desiredAccuracy;
             self.manager.distanceFilter = self.lowPowerMode ? 10.0 : distanceFilter;
 

@@ -47,6 +47,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -67,6 +68,8 @@ import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import java.util.ArrayList;
+import java.util.Set;
+
 import com.google.android.gms.common.ConnectionResult;
 
 //Detected Activities imports
@@ -298,7 +301,6 @@ public class BackgroundLocationUpdateService
             if (location != null) {
 
                 if(isDebugging) {
-                    // Toast.makeText(context, "We recieveived a location update", Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "- locationUpdateReceiver" + location.toString());
                 }
 
@@ -310,10 +312,24 @@ public class BackgroundLocationUpdateService
                mIntent.putExtras(createLocationBundle(location));
                getApplicationContext().sendBroadcast(mIntent);
 
-                // postLocation(location);
+            } else {
+                LocationAvailability la = LocationAvailability.extractLocationAvailability(intent);
+                Boolean isAvailable = la.isLocationAvailable();
+
+                if(isAvailable == false) {
+                    Intent mIntent = new Intent(Constants.CALLBACK_LOCATION_UPDATE);
+                    mIntent.putExtra("error", "Location Provider is not available. Maybe GPS is disabled or the provider was rejected?");
+                    getApplicationContext().sendBroadcast(mIntent);
+                }
             }
         }
     };
+
+    private void showDebugToast(Context ctx, String msg) {
+        if(isDebugging) {
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private BroadcastReceiver detectedActivitiesReceiver = new BroadcastReceiver() {
       @Override
@@ -332,11 +348,11 @@ public class BackgroundLocationUpdateService
         Log.w(TAG, "Activity is recording" + isRecording);
 
         if(lastActivity.getType() == DetectedActivity.STILL && isRecording) {
-          Toast.makeText(context, "Detected Activity was STILL, Stop recording", Toast.LENGTH_SHORT).show();
-          stopRecording();
+            showDebugToast(context, "Detected Activity was STILL, Stop recording");
+            stopRecording();
         } else if(lastActivity.getType() != DetectedActivity.STILL && !isRecording) {
-          Toast.makeText(context, "Detected Activity was ACTIVE, Start Recording", Toast.LENGTH_SHORT).show();
-          startRecording();
+            showDebugToast(context, "Detected Activity was ACTIVE, Start Recording");
+            startRecording();
         }
         //else do nothing
       }
@@ -475,8 +491,8 @@ public class BackgroundLocationUpdateService
            }
            @Override
            public void onConnectionSuspended(int i) {
-              Log.w(TAG, "Connection To Activity Suspended");
-              Toast.makeText(getApplicationContext(), "Activity Client Suspended", Toast.LENGTH_SHORT).show();
+               Log.w(TAG, "Connection To Activity Suspended");
+               showDebugToast(getApplicationContext(), "Activity Client Suspended");
            }
        };
 
@@ -612,9 +628,7 @@ public class BackgroundLocationUpdateService
         this.stopRecording();
         this.cleanUp();
 
-        if (isDebugging) {
-            Toast.makeText(this, "Background location tracking stopped", Toast.LENGTH_SHORT).show();
-        }
+        showDebugToast(this, "Background location tracking stopped");
         return super.stopService(intent);
     }
 
