@@ -13,7 +13,7 @@ module.exports = {
             notificationTitle   = config.notificationTitle || "Background tracking",
             notificationText    = config.notificationText  || "ENABLED",
             activityType        = config.activityType || "AutomotiveNavigation",
-            useActivityDetection = config.useActivityDetection || "false",
+            useActivityDetection = config.useActivityDetection || false,
             activitiesInterval =  config.activitiesInterval || 1000;
 
         exec(function() {},

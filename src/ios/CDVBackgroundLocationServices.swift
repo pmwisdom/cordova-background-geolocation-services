@@ -28,9 +28,12 @@ var distanceFilter = kCLDistanceFilterNone;
 var desiredAccuracy = kCLLocationAccuracyBest;
 var activityType = CLActivityType.AutomotiveNavigation;
 var interval = 5.0;
-var aggressiveInterval = 2.0;
-var backgroundTaskCount = 0;
 var debug: Bool?;
+var useActivityDetection = false;
+var aggressiveInterval = 2.0;
+
+var stationaryTimout = (Double)(5 * 60); // 5 minutes
+var backgroundTaskCount = 0;
 
 //State vars
 var enabled = false;
@@ -80,6 +83,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
     // 6 notificationTitle -- (not used on ios),
     // 7 notificationText-- (not used on ios),
     // 8 activityType, fences -- (not used ios)
+    // 9 useActivityDetection
     func configure(command: CDVInvokedUrlCommand) {
 
         //log("configure arguments: \(command.arguments)");
@@ -90,6 +94,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
         aggressiveInterval = (Double)(command.argumentAtIndex(4) as! Int / 1000); // Millseconds to seconds
         activityType = self.toActivityType(command.argumentAtIndex(8) as! String);
         debug = command.argumentAtIndex(5) as? Bool;
+        useActivityDetection = command.argumentAtIndex(9) as! Bool;
 
         log("--------------------------------------------------------");
         log("   Configuration Success");
@@ -110,11 +115,6 @@ var activityCommandDelegate:CDVCommandDelegate?;
     }
 
     func registerForActivityUpdates(command : CDVInvokedUrlCommand) {
-//        log("Activity Updates not enabled on IOS");
-//
-//        let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAsString: "Activity Updates not enabled on IOS");
-//        commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId);
-        
         log("registerForActivityUpdates");
         activityUpdateCallback = command.callbackId;
         activityCommandDelegate = commandDelegate;
@@ -333,7 +333,12 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             let longitude = bestLocation!.coordinate.longitude;
             let accuracy = bestLocation!.horizontalAccuracy;
 
-            let msg = "Got Location Update:  { \(latitude) - \(longitude) }  Accuracy: \(accuracy)";
+            var msg = "Got Location Update:  { \(latitude) - \(longitude) }  Accuracy: \(accuracy)";
+            
+            if(useActivityDetection) {
+                    msg += " Stationary : \(activityManager.isStationary)";
+            }
+            
             log(msg);
             NotificationManager.manager.notify(msg);
 
@@ -419,7 +424,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 
         taskManager.beginNewBackgroundTask();
 
-        locationTimer = NSTimer.scheduledTimerWithTimeInterval(activityManager.isStationary ? 50 : interval, target: self, selector: #selector(LocationManager.restartUpdates), userInfo: nil, repeats: false);
+        locationTimer = NSTimer.scheduledTimerWithTimeInterval(activityManager.isStationary ? stationaryTimout : interval, target: self, selector: #selector(LocationManager.restartUpdates), userInfo: nil, repeats: false);
 
         if(stopUpdateTimer != nil) {
             stopUpdateTimer.invalidate();
@@ -557,7 +562,7 @@ class ActivityManager : NSObject {
             detectedActivities["ON_BICYCLE"] = self.getActivityConfidence(data.cycling, multiplier: confidenceMult)
         }
         
-        NSLog("DETECTED ACTIVITIES %@", detectedActivities);
+        log("Received Detected Activities : \(detectedActivities)");
         
         return detectedActivities;
     }
@@ -567,7 +572,6 @@ class ActivityManager : NSObject {
             activityCommandDelegate?.runInBackground({
                 
                 var result:CDVPluginResult?;
-//                let loc = self.locationToDict(bestLocation!) as [NSObject: AnyObject];
                 
                 result = CDVPluginResult(status: CDVCommandStatus_OK, messageAsDictionary:activities as [NSObject: AnyObject]);
                 result!.setKeepCallbackAsBool(true);
@@ -578,6 +582,10 @@ class ActivityManager : NSObject {
     
     func startDetection() {
         NSLog("Activity Manager - Starting Detection %@", self.available);
+        if(useActivityDetection == false) {
+            return;
+        }
+        
         if(self.available) {
             self.updating = true;
             
@@ -601,7 +609,7 @@ class ActivityManager : NSObject {
                 }
             }
         } else {
-            NSLog("Activity Manager - Not available on your device");
+            log("Activity Manager - Not available on your device");
         }
     }
     
