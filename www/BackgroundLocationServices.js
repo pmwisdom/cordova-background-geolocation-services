@@ -1,4 +1,4 @@
-lsvar exec = require("cordova/exec");
+var exec = require("cordova/exec");
 module.exports = {
     pName : 'BackgroundLocationServices',
     config: {},
