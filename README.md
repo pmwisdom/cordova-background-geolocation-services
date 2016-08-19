@@ -23,7 +23,7 @@ I've also included an activity detection API. It is used to save battery life, b
 
 Cordova :
 ````
-cordova plugin add https://github.com/pmwisdom/cordova-background-geolocation-services.git
+cordova plugin add https://github.com/pmwisdom/cordova-background-geolocation-services.git --save
 ````
 
 Meteor : 
