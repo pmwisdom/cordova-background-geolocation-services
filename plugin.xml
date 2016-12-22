@@ -68,12 +68,11 @@
 
         <config-file target="config.xml" parent="/*">
             <feature name="BackgroundLocationServices">
-                <param name="ios-package" value="HWPBackgroundLocationServices"/>
+                <param name="ios-package" value="BackgroundLocationServices"/>
             </feature>
         </config-file>
 
         <header-file src="src/ios/Loc-Bridging-Header.h"/>
-
         <source-file src="src/ios/CDVBackgroundLocationServices.swift"/>
 
         <framework src="AudioToolbox.framework" weak="true"/>

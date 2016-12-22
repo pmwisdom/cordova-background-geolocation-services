@@ -47,7 +47,7 @@ var activityUpdateCallback:String?;
 var activityCommandDelegate:CDVCommandDelegate?;
 
 
-@objc(HWPBackgroundLocationServices) open class BackgroundLocationServices : CDVPlugin {
+@objc(BackgroundLocationServices) open class BackgroundLocationServices : CDVPlugin {
 
     //Initialize things here (basically on run)
     override open func pluginInitialize() {
@@ -85,7 +85,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
     // 7 notificationText-- (not used on ios),
     // 8 activityType, fences -- (not used ios)
     // 9 useActivityDetection
-    open func configure(command: CDVInvokedUrlCommand) {
+    open func config(_ command: CDVInvokedUrlCommand) {
 
         //log(message: "configure arguments: \(command.arguments)");
 

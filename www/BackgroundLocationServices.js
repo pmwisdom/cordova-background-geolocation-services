@@ -19,7 +19,7 @@ module.exports = {
         exec(function() {},
           function() {},
           'BackgroundLocationServices',
-          'configure',
+          'config',
           [distanceFilter, desiredAccuracy,  interval, fastestInterval, aggressiveInterval, debug, notificationTitle, notificationText, activityType, useActivityDetection, activitiesInterval]
         );
     },
