@@ -13,8 +13,6 @@
         <engine name="cordova" version=">=3.0.0"/>
     </engines>
 
-    <dependency id="cordova-plugin-geolocation"/>
-
     <js-module src="www/BackgroundLocationServices.js" name="BackgroundLocationServices">
         <clobbers target="plugins.backgroundLocationServices"/>
     </js-module>
@@ -73,9 +71,12 @@
                 <param name="ios-package" value="HWPBackgroundLocationServices"/>
             </feature>
         </config-file>
+
+        <header-file src="src/ios/Loc-Bridging-Header.h"/>
+
+        <source-file src="src/ios/CDVBackgroundLocationServices.swift"/>
+
         <framework src="AudioToolbox.framework" weak="true"/>
         <framework src="AVFoundation.framework" weak="true"/>
-        <source-file src="src/ios/CDVBackgroundLocationServices.swift"/>
-        <header-file src="src/ios/Loc-Bridging-Header.h"/>
     </platform>
 </plugin>
