@@ -1,6 +1,12 @@
 # cordova-background-geolocation-services
 Background Geolocation For Android and iOS with pure javascript callbacks.
 
+#### Swift 3 Notice:
+I have a branch running succesfully with the new changes for Swift 3 and Xcode. 
+https://github.com/pmwisdom/cordova-background-geolocation-services/tree/swift3_2
+
+The more testing it gets the sooner I'll release it.
+
 #### What is this?
 This plugin is for enabling background geolocation in your cordova project. It was aimed with the specific goal of normalizing the API for android and iOS and retrieving constant location updates in the background until you tell it to stop (If you tell it you want updates every 3 seconds it will give you one every 3 seconds). This is currently in active development. Feel free to make any requests. 
 
