@@ -62,11 +62,32 @@
             <string>${EXECUTABLE_NAME} Would Like to Use Your Current Location Even In Background.</string>
         </config-file>
 
+        <config-file target="*-Info.plist" parent="NSMotionUsageDescription">
+            <string>${EXECUTABLE_NAME} Would Like to Detect Motion for Location Tracking.</string>
+        </config-file>
+
         <config-file target="*-Info.plist" parent="UIBackgroundModes">
             <array>
                 <string>location</string>
             </array>
         </config-file>
+
+
+        <config-file target="*-Info.plist" parent="MKDirectionsApplicationSupportedModes">
+            <array>
+                <string>MKDirectionsModeBike</string>
+                <string>MKDirectionsModeBus</string>
+                <string>MKDirectionsModeCar</string>
+                <string>MKDirectionsModeFerry</string>
+                <string>MKDirectionsModeOther</string>
+                <string>MKDirectionsModePedestrian</string>
+                <string>MKDirectionsModeRideShare</string>
+                <string>MKDirectionsModeStreetCar</string>
+                <string>MKDirectionsModeSubway</string>
+                <string>MKDirectionsModeTaxi</string>
+                <string>MKDirectionsModeTrain</string>
+            </array>
+        </config-file>        
 
         <config-file target="config.xml" parent="/*">
             <feature name="BackgroundLocationServices">
