@@ -39,6 +39,7 @@ var backgroundTaskCount = 0;
 //State vars
 var enabled = false;
 var background = false;
+var updatingActivities = false;
 
 var locationUpdateCallback:String?;
 var locationCommandDelegate:CDVCommandDelegate?;
@@ -58,19 +59,19 @@ var activityCommandDelegate:CDVCommandDelegate?;
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(BackgroundLocationServices.onResume),
+            selector: Selector("onResume"),
             name: NSNotification.Name.UIApplicationWillEnterForeground,
             object: nil);
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(BackgroundLocationServices.onSuspend),
+            selector: Selector("onSuspend"),
             name: NSNotification.Name.UIApplicationDidEnterBackground,
             object: nil);
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(BackgroundLocationServices.willResign),
+            selector: Selector("willResign"),
             name: NSNotification.Name.UIApplicationWillResignActive,
             object: nil);
     }
@@ -189,7 +190,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
         background = true;
 
         if(enabled) {
-            locationManager.startUpdating(force: false);
+            locationManager.startUpdating(force: true);
             activityManager.startDetection();
         }
     }
@@ -248,7 +249,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     let SECS_OLD_MAX = 2.0;
 
     var locationArray = [CLLocation]();
-    var updating = false;
+    var updatingLocation = false;
     var aggressive = false;
 
     var lowPowerMode = false;
@@ -297,7 +298,6 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     }
 
     func sync() {
-        log(message: "sync called");
         self.enableBackgroundLocationUpdates();
 
         var bestLocation:CLLocation?;
@@ -366,9 +366,9 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     // Force here is to make sure we are only starting the location updates once, until we want to restart them
     // Was having issues with it starting, and then starting a second time through resign on some builds.
     func startUpdating(force : Bool) {
-        if(!self.updating || force) {
+        if(!self.updatingLocation || force) {
             self.enableBackgroundLocationUpdates();
-            self.updating = true;
+            self.updatingLocation = true;
 
             self.manager.delegate = self;
 
@@ -388,7 +388,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 
     func stopUpdating() {
         log(message: "Stopping Location Updates!");
-        self.updating = false;
+        self.updatingLocation = false;
 
         if(locationTimer != nil) {
             locationTimer.invalidate();
@@ -399,7 +399,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
         self.manager.stopMonitoringSignificantLocationChanges();
     }
 
-    private func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let locationArray = locations as NSArray
         let locationObj = locationArray.lastObject as! CLLocation
 
@@ -503,7 +503,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
 class ActivityManager : NSObject {
     var manager : CMMotionActivityManager?;
     var available = false;
-    var updating = false;
+    var updatingActivities = false;
 
     var isStationary = false;
 
@@ -586,7 +586,7 @@ class ActivityManager : NSObject {
         }
 
         if(self.available) {
-            self.updating = true;
+            self.updatingActivities = true;
 
             manager!.startActivityUpdates(to: OperationQueue()) { data in
                 if let data = data {
@@ -613,8 +613,8 @@ class ActivityManager : NSObject {
     }
 
     func stopDetection() {
-        if(self.available && self.updating) {
-            self.updating = false;
+        if(self.available && self.updatingActivities) {
+            self.updatingActivities = false;
 
             manager!.stopActivityUpdates();
         }
