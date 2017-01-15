@@ -7,6 +7,10 @@ This plugin is for enabling background geolocation in your cordova project. It w
 I've also included an activity detection API. It is used to save battery life, but you can also retrieve the likelihood of what the user is currently doing (standing still, walking, running, driving, etc).
 
 ### Changelog :
+ * 1.1.0 -Breaking- (If you need the lower swift versions, use 1.0.4)
+   - [iOS]: Converted to new Swift Version
+   - [iOS]: Fixed some cases where the plugin would keep running in the foreground
+ * 1.0.4 New Low GPS mode for increased battery life on iOS
  * 1.0.3 Activity Detection And Much Better Battery Life For iOS!
  * 1.0.2 Error callbacks now correctly funnel through the location register
  
