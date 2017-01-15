@@ -86,7 +86,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
     // 7 notificationText-- (not used on ios),
     // 8 activityType, fences -- (not used ios)
     // 9 useActivityDetection
-    open func config(_ command: CDVInvokedUrlCommand) {
+    open func configure(_ command: CDVInvokedUrlCommand) {
 
         //log(message: "configure arguments: \(command.arguments)");
 
