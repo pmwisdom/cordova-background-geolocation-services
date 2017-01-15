@@ -2,7 +2,7 @@
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="org.flybuy.cordova.background-location-services"
-    version="1.0.4">
+    version="1.1.0">
 
     <name>CDVBackgroundLocationServices</name>
     <description>Background Location Services For Cordova</description>
@@ -12,8 +12,6 @@
     <engines>
         <engine name="cordova" version=">=3.0.0"/>
     </engines>
-
-    <dependency id="cordova-plugin-geolocation"/>
 
     <js-module src="www/BackgroundLocationServices.js" name="BackgroundLocationServices">
         <clobbers target="plugins.backgroundLocationServices"/>
@@ -70,12 +68,14 @@
 
         <config-file target="config.xml" parent="/*">
             <feature name="BackgroundLocationServices">
-                <param name="ios-package" value="HWPBackgroundLocationServices"/>
+                <param name="ios-package" value="BackgroundLocationServices"/>
             </feature>
         </config-file>
+
+        <header-file src="src/ios/Loc-Bridging-Header.h"/>
+        <source-file src="src/ios/CDVBackgroundLocationServices.swift"/>
+
         <framework src="AudioToolbox.framework" weak="true"/>
         <framework src="AVFoundation.framework" weak="true"/>
-        <source-file src="src/ios/CDVBackgroundLocationServices.swift"/>
-        <header-file src="src/ios/Loc-Bridging-Header.h"/>
     </platform>
 </plugin>

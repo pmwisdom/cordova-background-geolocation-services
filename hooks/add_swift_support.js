@@ -1,10 +1,10 @@
-//SRC : https://github.com/cowbell/cordova-plugin-geofence/blob/master/hooks/add_swift_support.js
 var child_process = require('child_process'),
     fs = require('fs'),
     path = require('path');
 
 module.exports = function(context) {
     var IOS_DEPLOYMENT_TARGET = '8.0',
+        SWIFT_VERSION = '3.0',
         COMMENT_KEY = /_comment$/,
         CORDOVA_VERSION = process.env.CORDOVA_VERSION;
 
@@ -53,8 +53,9 @@ module.exports = function(context) {
             for (config in configurations) {
                 buildSettings = configurations[config].buildSettings;
                 buildSettings['IPHONEOS_DEPLOYMENT_TARGET'] = IOS_DEPLOYMENT_TARGET;
+                buildSettings['SWIFT_VERSION'] = SWIFT_VERSION;
                 buildSettings['EMBEDDED_CONTENT_CONTAINS_SWIFT'] = "YES";
-                buildSettings['LD_RUNPATH_SEARCH_PATHS'] = '"@executable_path/Frameworks"'
+                buildSettings['LD_RUNPATH_SEARCH_PATHS'] = '"@executable_path/Frameworks"';
             }
             console.log('IOS project now has deployment target set as:[' + IOS_DEPLOYMENT_TARGET + '] ...');
             console.log('IOS project option EMBEDDED_CONTENT_CONTAINS_SWIFT set as:[YES] ...');
