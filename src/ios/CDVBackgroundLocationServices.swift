@@ -387,7 +387,7 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
     }
 
     func stopUpdating() {
-        log(message: "Stopping Location Updates!");
+        log(message: "[LocationManager.stopUpdating] Stopping Location Updates!");
         self.updatingLocation = false;
 
         if(locationTimer != nil) {
@@ -395,11 +395,21 @@ class LocationManager : NSObject, CLLocationManagerDelegate {
             locationTimer = nil;
         }
 
+        if(stopUpdateTimer != nil) {
+            stopUpdateTimer.invalidate();
+            stopUpdateTimer = nil;
+        }
+
         self.manager.stopUpdatingLocation();
         self.manager.stopMonitoringSignificantLocationChanges();
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]){
+        // If we've shut off updating on our side and a location is left in the queue to be passed back we want to toss it or the location manager will restart updating again when we dont want it to.
+        if(!self.updatingLocation) {
+            return;
+        }
+
         let locationArray = locations as NSArray
         let locationObj = locationArray.lastObject as! CLLocation
 
