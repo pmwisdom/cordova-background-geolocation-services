@@ -156,7 +156,7 @@ var activityCommandDelegate:CDVCommandDelegate?;
         commandDelegate!.send(pluginResult, callbackId: command.callbackId);
     }
 
-    func startAggressiveTracking(command: CDVInvokedUrlCommand) {
+    func startAggressiveTracking(_ command: CDVInvokedUrlCommand) {
         log(message: "startAggressiveTracking");
         locationManager.startAggressiveTracking();
 
