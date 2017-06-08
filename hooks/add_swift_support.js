@@ -20,9 +20,6 @@ module.exports = function(context) {
             xml = cordova_util.projectConfig(projectRoot),
             cfg = new ConfigParser(xml),
             projectName = cfg.name(),
-            platform_ios = CORDOVA_VERSION < 5.0
-              ? context.requireCordovaModule('cordova-lib/src/plugman/platforms')['ios']
-              : context.requireCordovaModule('cordova-lib/src/plugman/platforms/ios'),
             iosPlatformPath = path.join(projectRoot, 'platforms', 'ios'),
             iosProjectFilesPath = path.join(iosPlatformPath, projectName),
             xcconfigPath = path.join(iosPlatformPath, 'cordova', 'build.xcconfig'),
@@ -31,7 +28,39 @@ module.exports = function(context) {
             xcodeProject,
             bridgingHeaderPath;
 
-        projectFile = platform_ios.parseProjectFile(iosPlatformPath);
+        if(CORDOVA_VERSION < 7.0) {
+            platform_ios = CORDOVA_VERSION < 5.0 
+              ? context.requireCordovaModule('cordova-lib/src/plugman/platforms')['ios']
+              : context.requireCordovaModule('cordova-lib/src/plugman/platforms/ios')
+
+            projectFile = platform_ios.parseProjectFile(iosPlatformPath);
+        } else {
+            var project_files = context.requireCordovaModule('glob').sync(path.join(iosPlatformPath, '*.xcodeproj', 'project.pbxproj'));
+            if (project_files.length === 0) {
+                throw new Error('Can\'t found xcode project file');
+            }
+
+            var pbxPath = project_files[0];
+            var xcodeproj = context.requireCordovaModule('xcode').project(pbxPath);
+            xcodeproj.parseSync();
+
+            projectFile = {
+                'xcode': xcodeproj,
+                write: function () {
+                    var fs = context.requireCordovaModule('fs');
+
+                    var frameworks_file = path.join(iosPlatformPath, 'frameworks.json');
+                    var frameworks = {};
+                    try {
+                        frameworks = context.requireCordovaModule(frameworks_file);
+                        console.log(JSON.stringify(frameworks));
+                    } catch(e) {}
+
+                    fs.writeFileSync(pbxPath, xcodeproj.writeSync());
+                    fs.writeFileSync(frameworks_file, JSON.stringify(this.frameworks, null, 4));
+                }
+            };
+        }
         xcodeProject = projectFile.xcode;
 
         if (fs.existsSync(xcconfigPath)) {
