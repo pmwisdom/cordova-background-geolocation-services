@@ -22,10 +22,10 @@ I've also included an activity detection API. It is used to save battery life, b
 
 **iOS** : Uses a timer based approach and CoreMotion library to enable endless background tracking.
 
-###Setup: 
+### Setup: 
 * Make sure you have Google Play Services AND Google Repository installed via your android-sdk manager prior to building your application with this. It will be under the extras part of the sdk manager. More information can be found here: http://developer.android.com/sdk/installing/adding-packages.html.
 
-###Installation:
+### Installation:
 
 Cordova :
 ````
@@ -104,5 +104,4 @@ Phonegap Build : Swift files are not officially supported as of yet on phonegap 
 
 ### Credit!
 
-By the way, credit to Christocracy and his great [plugin](https://github.com/christocracy/cordova-plugin-background-geolocation/tree/0.3.7) that spurned this one. It should share the same concepts via javascript.
-
+By the way, credit to Christocracy and his great [plugin](https://github.com/christocracy/cordova-plugin-background-geolocation/tree/0.3.7) that inspired this one. It should share the same concepts via javascript.
